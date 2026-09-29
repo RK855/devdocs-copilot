@@ -105,10 +105,14 @@ flowchart TD
 ### 1. 环境要求
 
 - Python 3.10+（语法层面兼容；开发实测环境为 3.14.2，3.10–3.13 未逐一验证）
-- 可访问外网：两个模型 API 均为云端服务；前端 Markdown/代码高亮库走 CDN
-- 两个模型服务的 API Key：
-  - **Agnes**（聊天 / Function Calling，OpenAI 兼容协议，可经 `.env` 的 base_url 换为任意兼容端点）：<https://agnes-ai.com>
-  - **硅基流动**（embedding / rerank）：<https://siliconflow.cn>
+- 可访问外网：模型 API 为云端服务；前端 Markdown/代码高亮库走 CDN
+- **两类模型服务（不绑定特定厂商，任意兼容供应商均可）**：
+  1. **一个可对话的大模型** —— 提供 OpenAI 兼容的 `/chat/completions` 接口；使用 Agent 模式还要求模型支持 **Function Calling（工具调用）**；
+  2. **一个向量（embedding）模型** —— 为文档块和用户问题生成向量。向量维度在建库后不可更改，`.env` 的 `EMBEDDING_DIM` 必须与模型实际维度一致；更换 embedding 模型需清空 `data/chroma/` 后重建索引。
+  - 可选：**一个 rerank 精排模型**。没有也能运行——设 `RERANK_ENABLED=false` 即退回纯 RRF 排序（运行中精排服务故障也会 fail-open 自动降级），仅损失二次精排与二次证据门。
+- 端点地址、模型名、Key 全部在 `.env` 中配置（base_url + 模型名 + Key 三件套），换供应商无需改代码。**本项目开发时实际使用的两家（仅为具体示例，并非硬性要求）**：
+  - **Agnes** —— 聊天 / Function Calling：<https://agnes-ai.com>
+  - **硅基流动** —— embedding / rerank：<https://siliconflow.cn>
 
 ### 2. 安装
 
@@ -143,6 +147,8 @@ Copy-Item .env.example .env   # Windows PowerShell
 AGNES_API_KEY=sk-xxxx
 SILICONFLOW_API_KEY=sk-xxxx
 ```
+
+> 使用其他 OpenAI 兼容供应商时，同步修改同文件中的 `AGNES_BASE_URL` / `CHAT_MODEL`（对话模型）与 `SILICONFLOW_BASE_URL` / `EMBEDDING_MODEL` / `EMBEDDING_DIM`（向量模型，注意维度一致）；不使用精排则加一行 `RERANK_ENABLED=false`。变量名保留历史命名，不影响接入任何供应商。
 
 ### 4. 启动
 
@@ -343,14 +349,3 @@ devdocs-copilot/
 - **Agent 终答流式化**：当前 Agent SSE 推送的是执行进度，最终答案仍为 done 整包；下一步把终答接成 delta 逐字流（复用 RAG 的 `stream_generate`），并让通用知识兜底答案也逐字输出；
 - **终答接地充分性门**：收敛"证据擦边但模型硬答"的负结果（Django-PostgreSQL 题）；
 - Agent 步数与提示词优化，进一步压缩平均工具调用数（真实冒烟曾见模型每轮并行 2 个 search、跑满 5 轮共 10 次检索）。
-
----
-
-## 配套文档
-
-项目根目录另有四篇中文学习/设计文档，记录了从 Day 1 到 Day 16 的完整推演、踩坑与评测细节：
-
-- **项目设计文档.md** —— 功能总览、各功能详细设计与决策权衡、排期
-- **项目说明文档.md** —— 逐文件代码说明、调用关系、API 契约与测试清单
-- **知识点手册.md** —— 按天组织的 RAG / Agent / 工程化知识点
-- **AI术语手册.md** —— RAG、检索评测、Agent ReAct 等术语大白话解释
