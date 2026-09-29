@@ -1,0 +1,114 @@
+[
+  {
+    "id": "agent-di",
+    "type": "概念",
+    "question": "什么是依赖注入？在 FastAPI 里怎么声明依赖？",
+    "expected_mode": "agent",
+    "must_contain": ["Depends", "注入"],
+    "note": "python_di.md：Depends()、松耦合、假对象"
+  },
+  {
+    "id": "agent-query-default",
+    "type": "API用法",
+    "question": "FastAPI 的查询参数怎么设置默认值？",
+    "expected_mode": "agent",
+    "must_contain": ["Query", "default"],
+    "note": "fastapi_params.md：Query(default=...)"
+  },
+  {
+    "id": "agent-path-validate",
+    "type": "API用法",
+    "question": "FastAPI 路径参数怎么做大于 0 的校验？",
+    "expected_mode": "agent",
+    "must_contain": ["Path", "gt"],
+    "note": "fastapi_params.md：Path(..., gt=0)"
+  },
+  {
+    "id": "agent-body-json",
+    "type": "API用法",
+    "question": "FastAPI 的 POST 接口怎么接收 JSON 请求体？",
+    "expected_mode": "agent",
+    "must_contain": ["BaseModel"],
+    "note": "fastapi_body.md：继承 BaseModel"
+  },
+  {
+    "id": "agent-startup",
+    "type": "概念",
+    "question": "FastAPI 应用怎么启动？",
+    "expected_mode": "agent",
+    "must_contain": ["uvicorn", "main:app"],
+    "note": "fastapi_startup.md"
+  },
+  {
+    "id": "agent-asgi-wsgi",
+    "type": "概念",
+    "question": "ASGI 和 WSGI 有什么区别？",
+    "expected_mode": "agent",
+    "must_contain": ["ASGI", "WSGI"],
+    "note": "asgi_asyncio.md"
+  },
+  {
+    "id": "agent-django-url",
+    "type": "跨框架",
+    "question": "Django 里怎么把 URL 绑定到视图函数？",
+    "expected_mode": "agent",
+    "must_contain": ["path", "urls.py"],
+    "note": "django_views.md：urls.py + path()"
+  },
+  {
+    "id": "agent-422",
+    "type": "报错分析",
+    "question": "调用 FastAPI 接口返回 422 是什么意思？怎么排查？",
+    "expected_mode": "agent",
+    "must_contain": ["422", "校验"],
+    "note": "fastapi_params.md / fastapi_body.md：Pydantic 校验失败"
+  },
+  {
+    "id": "agent-code-health",
+    "type": "代码生成",
+    "question": "用 FastAPI 写一个带 /health 健康检查接口的最小可运行示例",
+    "expected_mode": "agent",
+    "must_contain": ["/health", "uvicorn"],
+    "note": "期望模型走 search_docs → generate_code_example"
+  },
+  {
+    "id": "reject-food",
+    "type": "离题",
+    "question": "红烧肉怎么做好吃？",
+    "expected_mode": "reject",
+    "must_contain": [],
+    "note": "菜名离题（模型可能零工具直拒或多轮 0 结果）"
+  },
+  {
+    "id": "reject-poem",
+    "type": "离题",
+    "question": "帮我写一首关于秋天的七言绝句",
+    "expected_mode": "reject",
+    "must_contain": [],
+    "note": "创作类离题"
+  },
+  {
+    "id": "reject-django-pg",
+    "type": "库外",
+    "question": "Django 怎么配置 PostgreSQL 数据库连接？",
+    "expected_mode": "reject",
+    "must_contain": [],
+    "note": "django_views.md 只有视图/ORM 简介，无 DATABASES/psycopg 配置"
+  },
+  {
+    "id": "reject-celery",
+    "type": "库外",
+    "question": "Celery 怎么做定时任务？",
+    "expected_mode": "reject",
+    "must_contain": [],
+    "note": "语料无 Celery 文档"
+  },
+  {
+    "id": "reject-react",
+    "type": "库外",
+    "question": "React 的 useEffect 依赖数组怎么用？",
+    "expected_mode": "reject",
+    "must_contain": [],
+    "note": "语料无前端框架文档"
+  }
+]

@@ -1,0 +1,216 @@
+[
+  {
+    "id": "what-01",
+    "type": "是什么",
+    "question": "什么是依赖注入？",
+    "relevant_chunks": [["python_di.md", 0]],
+    "note": "DI 定义：外部注入、松耦合、可换假对象"
+  },
+  {
+    "id": "what-02",
+    "type": "是什么",
+    "question": "什么是路径参数？",
+    "relevant_chunks": [["fastapi_params.md", 0]],
+    "note": "Path 定义、gt/ge 校验"
+  },
+  {
+    "id": "what-03",
+    "type": "是什么",
+    "question": "什么是动态路由？",
+    "relevant_chunks": [["fastapi_routing.md", 1]],
+    "note": "{item_id} 花括号动态部分、422 类型校验"
+  },
+  {
+    "id": "what-04",
+    "type": "是什么",
+    "question": "FastAPI 里的请求体指的是什么？",
+    "relevant_chunks": [["fastapi_body.md", 1]],
+    "note": "Body 是 POST/PUT 携带的 JSON 数据；与 Query 区别"
+  },
+  {
+    "id": "what-05",
+    "type": "是什么",
+    "question": "什么是查询参数？",
+    "relevant_chunks": [["fastapi_params.md", 1]],
+    "note": "?key=value、Query()、默认值"
+  },
+  {
+    "id": "what-06",
+    "type": "是什么",
+    "question": "DIP 和 DI，也就是常说的依赖倒置和依赖注入，二者中的依赖注入是什么意思？",
+    "relevant_chunks": [["python_di.md", 0]],
+    "note": "长难问句：外部注入、松耦合、可传假对象；考验检索抗噪声"
+  },
+
+  {
+    "id": "how-01",
+    "type": "怎么用",
+    "question": "怎么写一个能存数据的 POST 接口？",
+    "relevant_chunks": [["fastapi_routing.md", 1], ["fastapi_body.md", 0]],
+    "note": "'存数据' 与字面不重合，考察语义理解到 @app.post + BaseModel；两块都相关"
+  },
+  {
+    "id": "how-02",
+    "type": "怎么用",
+    "question": "怎么定义一个用来读数据的 GET 接口？",
+    "relevant_chunks": [["fastapi_routing.md", 0]],
+    "note": "@app.get 装饰器、GET 用于读取"
+  },
+  {
+    "id": "how-03",
+    "type": "怎么用",
+    "question": "怎么把 FastAPI 的 web 服务跑起来？",
+    "relevant_chunks": [["fastapi_startup.md", 0]],
+    "note": "F6 标定同款问法：uvicorn main:app；BM25 零命中，向量救场"
+  },
+  {
+    "id": "how-04",
+    "type": "怎么用",
+    "question": "开发时怎么让服务器在我改完代码后自动重启？",
+    "relevant_chunks": [["fastapi_startup.md", 0]],
+    "note": "--reload 热重载；问法不含 reload 字面"
+  },
+  {
+    "id": "how-05",
+    "type": "怎么用",
+    "question": "客户端发来的 JSON 要怎么接住？",
+    "relevant_chunks": [["fastapi_body.md", 0]],
+    "note": "BaseModel 类 + 类型注解参数"
+  },
+  {
+    "id": "how-06",
+    "type": "怎么用",
+    "question": "怎么让 URL 问号后面的参数在不传时也有值？",
+    "relevant_chunks": [["fastapi_params.md", 1]],
+    "note": "Query(default=...)；问法绕开'默认值'之外的术语堆砌"
+  },
+  {
+    "id": "how-07",
+    "type": "怎么用",
+    "question": "访问 /items/42 时怎么拿到 42 这个编号？",
+    "relevant_chunks": [["fastapi_routing.md", 1]],
+    "note": "{item_id} 动态路由参数"
+  },
+  {
+    "id": "how-08",
+    "type": "怎么用",
+    "question": "数据库连接这种公共依赖要怎么写进接口里？",
+    "relevant_chunks": [["python_di.md", 0], ["python_di.md", 1]],
+    "note": "Depends(get_db) 声明与注入；两块衔接同一示例"
+  },
+
+  {
+    "id": "why-01",
+    "type": "为什么",
+    "question": "为什么直接 python main.py 不能把网站跑起来？",
+    "relevant_chunks": [["fastapi_startup.md", 1]],
+    "note": "ASGI 应用对象必须交给 uvicorn 托管"
+  },
+  {
+    "id": "why-02",
+    "type": "为什么",
+    "question": "为什么参数传了个 abc 给编号字段会收到 422？",
+    "relevant_chunks": [["fastapi_params.md", 2], ["fastapi_body.md", 1]],
+    "note": "类型无法转换、Pydantic 校验、函数体不执行"
+  },
+  {
+    "id": "why-03",
+    "type": "为什么",
+    "question": "为什么热重载上线以后就不能开了？",
+    "relevant_chunks": [["fastapi_startup.md", 0]],
+    "note": "文件监视开销与不稳定，生产用多 worker"
+  },
+  {
+    "id": "why-04",
+    "type": "为什么",
+    "question": "为什么用了依赖注入以后单元测试更好写？",
+    "relevant_chunks": [["python_di.md", 2]],
+    "note": "覆盖依赖返回内存假数据、零数据库、横切关注点复用"
+  },
+  {
+    "id": "why-05",
+    "type": "为什么",
+    "question": "做检索增强生成时为什么要先把长文档切成小块？",
+    "relevant_chunks": [],
+    "note": "无答案题：语料刻意不讲 RAG 原理，证据门应拦住，考察拒答"
+  },
+
+  {
+    "id": "cmp-01",
+    "type": "对比",
+    "question": "Path 参数和 Query 参数怎么区分使用？",
+    "relevant_chunks": [["fastapi_params.md", 2]],
+    "note": "路径中定位资源必填 vs 问号后过滤分页可选"
+  },
+  {
+    "id": "cmp-02",
+    "type": "对比",
+    "question": "GET 和 POST 各自适合干什么？",
+    "relevant_chunks": [["fastapi_routing.md", 0]],
+    "note": "GET 读取、参数在查询串；POST 创建、数据在请求体（chunk0 同时讲两者用途）"
+  },
+  {
+    "id": "cmp-03",
+    "type": "对比",
+    "question": "请求体和查询参数在传数据时有什么差别？",
+    "relevant_chunks": [["fastapi_body.md", 1]],
+    "note": "结构化多字段 JSON vs 简单键值对；靠参数类型区分"
+  },
+  {
+    "id": "cmp-04",
+    "type": "对比",
+    "question": "用 Depends 注入和直接引用模块级全局对象相比好在哪？",
+    "relevant_chunks": [["python_di.md", 2]],
+    "note": "可替换/可隔离生命周期 vs 无法替换、共享状态污染"
+  },
+  {
+    "id": "cmp-05",
+    "type": "对比",
+    "question": "uvicorn main:app 和 python main.py 两种启动方式有什么不同？",
+    "relevant_chunks": [["fastapi_startup.md", 1]],
+    "note": "ASGI 服务器托管 vs 普通脚本不监听端口"
+  },
+
+  {
+    "id": "code-01",
+    "type": "代码类",
+    "question": "@app.post 这个装饰器应该怎么用？",
+    "relevant_chunks": [["fastapi_routing.md", 1], ["fastapi_routing.md", 0]],
+    "note": "精确标识符匹配；BM25 强项"
+  },
+  {
+    "id": "code-02",
+    "type": "代码类",
+    "question": "@app.get 写的路由为什么浏览器一刷新就执行？",
+    "relevant_chunks": [["fastapi_routing.md", 0]],
+    "note": "标识符 + 语义混合：chunk0 讲 GET 可直接浏览器访问"
+  },
+  {
+    "id": "code-03",
+    "type": "代码类",
+    "question": "Depends(get_db) 这行代码应该放在函数的什么位置？",
+    "relevant_chunks": [["python_di.md", 1], ["python_di.md", 0]],
+    "note": "路径函数参数里；chunk1 是完整代码，chunk0 是声明说明"
+  },
+  {
+    "id": "code-04",
+    "type": "代码类",
+    "question": "uvicorn main:app --reload 这条命令每个部分是什么意思？",
+    "relevant_chunks": [["fastapi_startup.md", 0]],
+    "note": "main 文件名/app 实例名/--reload 热重载，均在 chunk0"
+  },
+  {
+    "id": "code-05",
+    "type": "代码类",
+    "question": "class Item(BaseModel) 这样的模型类要怎么写字段？",
+    "relevant_chunks": [["fastapi_body.md", 0]],
+    "note": "name:str / price:float 类型注解字段"
+  },
+  {
+    "id": "code-06",
+    "type": "代码类",
+    "question": "线上报错 KeyError: 'token' 应该怎么排查修复？",
+    "relevant_chunks": [],
+    "note": "无答案题：语料无任何报错排查内容，证据门应拦住"
+  }
+]

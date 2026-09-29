@@ -1,0 +1,35 @@
+# DevDocs Copilot 直接依赖
+# pip 会自动解析间接依赖；需要完全复刻环境请用 requirements-lock.txt
+#
+# Web 框架 / ASGI 服务器
+fastapi==0.141.1
+uvicorn==0.53.0
+
+# AI 应用框架（LangChain 1.x）
+langchain==1.4.2
+langchain-openai==1.6.6
+langchain-text-splitters==1.1.2
+
+# 向量数据库
+chromadb==1.5.9
+
+# 文档解析
+pypdf==6.19.0
+python-docx==1.2.0
+
+# 配置与数据校验
+pydantic==2.13.5
+pydantic-settings==2.15.0
+
+# 异步文件读写（文档上传落盘）
+aiofiles==25.1.0
+
+# 文件上传表单解析（UploadFile 依赖）
+python-multipart
+
+# BM25 关键词检索（F5）：jieba 中文分词 + rank_bm25 算法实现
+jieba==0.42.1
+rank_bm25==0.2.2
+
+# Rerank 精排（F7）：调用硅基流动 /v1/rerank（chromadb 已间接携带，显式声明版本）
+httpx==0.28.1

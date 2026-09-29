@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虚拟环境
+venv/
+env/
+ENV/
+
+# 环境变量（敏感信息，不要提交！）
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 上传的文件
+uploads/*
+!uploads/.gitkeep
+
+# 数据
+data/*
+!data/.gitkeep
+
+# 日志
+*.log
+logs/
+
+# 临时文件
+*.tmp
+*.temp
+.cache/
+.pytest_cache/
