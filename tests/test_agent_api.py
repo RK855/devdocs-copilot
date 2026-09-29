@@ -7,7 +7,11 @@ from fastapi.testclient import TestClient
 from app.config import settings
 from app.services import agent_service, llm_client, rerank_service
 from app.services.llm_client import ChatTurn, ToolCall
+from conftest import requires_embedding_api
 from main import app
+
+# LLM / Reranker 均为 Stub，仅上传入库与检索真实调用 bge-m3
+pytestmark = requires_embedding_api
 
 
 class StubAgentLLM:

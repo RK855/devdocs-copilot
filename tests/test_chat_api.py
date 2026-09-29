@@ -4,9 +4,14 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
+from conftest import requires_embedding_api
+
 from app.config import settings
 from app.services import llm_client, rerank_service
 from main import app
+
+# LLM / Reranker 均为 Stub，仅上传入库与检索真实调用 bge-m3
+pytestmark = requires_embedding_api
 
 
 class StubLLM:

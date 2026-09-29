@@ -176,17 +176,10 @@ python -m app.scripts.seed ./eval/corpus --recursive
 ### 6. 运行测试
 
 ```bash
-python -m pytest -q          # 全量 319 个（需在 .env 配好硅基流动 Key）
+python -m pytest -q          # 零配置即可跑：263 passed, 56 skipped（约 6 秒）
 ```
 
-> 绝大多数测试以 Fake LLM / Stub Transport / 临时目录运行，**零网络零等待**，全套约 40 秒。少数集成与全链路用例（embedding、Chroma 入库、rerank smoke、两个 HTTP 全链路文件）调用**真实硅基流动 API**——未配 Key 时这些用例会报错而不是自动跳过。只想离线验证可忽略这 6 个文件跑其余 254 个纯单测：
->
-> ```bash
-> python -m pytest -q \
->   --ignore=tests/test_embeddings.py --ignore=tests/test_vector_store.py \
->   --ignore=tests/test_rerank_service.py --ignore=tests/test_documents_api.py \
->   --ignore=tests/test_chat_api.py --ignore=tests/test_agent_api.py
-> ```
+> 绝大多数测试以 Fake LLM / Stub Transport / 临时目录运行，**零网络零等待**。56 个集成与全链路用例（embedding、Chroma 入库、rerank smoke、三个 HTTP 全链路文件）会调用**真实硅基流动 API**，它们由 `tests/conftest.py` 统一门控：检测不到 `SILICONFLOW_API_KEY` 时自动 SKIP，克隆后零配置也能全绿；在 `.env` 配好 Key 后自动参与运行，全量 319 个约 40 秒跑完。
 
 ## API 一览
 
@@ -297,7 +290,7 @@ curl.exe -X POST http://127.0.0.1:8000/api/agent/query -H "Content-Type: applica
 
 ## 工程实践亮点
 
-- **严格 TDD（红 → 绿）**：319 个测试随功能增量生长，每个功能先写失败测试再实现；核心链路均以 Fake LLM / Stub Transport / 临时目录隔离（254 个可完全离线，见[快速开始](#6-运行测试)），全量套件约 40 秒跑完。
+- **严格 TDD（红 → 绿）**：319 个测试随功能增量生长，每个功能先写失败测试再实现；核心链路均以 Fake LLM / Stub Transport / 临时目录隔离（263 个可完全离线，56 个真实 API 集成用例无 Key 自动 SKIP，见[快速开始](#6-运行测试)），配好 Key 全量约 40 秒跑完。
 - **分层 + 构造注入**：routes 不写业务、services 不碰框架、db 对接外部；所有 LLM / Store / 检索器均可注入替身，`create_chat_client()` 是全应用唯一模型构造缝。
 - **阻塞调用纪律**：所有 OpenAI/Chroma 同步调用一律 `asyncio.to_thread` 包裹；SSE 用单 daemon worker 线程 + 双队列把同步流桥接成 async 生成器，断连在 `finally` 中兜底关闭。
 - **状态语义不含糊**："拒答 = 查过没有"与"故障 = 没查成"两套话术分离；401/403 立即失败不重试，429 指数退避，5xx 重试一次；空 LLM 输出视同失败，绝不冒充成功。
@@ -327,7 +320,7 @@ devdocs-copilot/
 │   └── scripts/                # seed 灌库 · backfill 存量迁移
 ├── static/index.html           # 单文件前端（零 npm）
 ├── eval/                       # 题集、14 份固定语料、评测脚本与历史结果
-├── tests/                      # 319 个测试（21 个测试文件）
+├── tests/                      # 319 个测试（21 个测试文件 + conftest.py 无 Key 自动跳过门控）
 ├── uploads/  data/             # 源文件与 Chroma 持久化目录
 ├── requirements.txt            # 直接依赖
 └── requirements-lock.txt       # 全量版本快照

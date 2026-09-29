@@ -1,7 +1,11 @@
 """Chroma 向量库封装 —— 集成测试（真实 bge-m3，临时目录）"""
 import pytest
 
+from conftest import requires_embedding_api
+
 from app.db.vector_store import VectorStore
+
+pytestmark = requires_embedding_api
 
 
 @pytest.fixture

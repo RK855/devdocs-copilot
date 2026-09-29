@@ -4,6 +4,8 @@ import json
 import httpx
 import pytest
 
+from conftest import requires_embedding_api
+
 from app.config import settings
 from app.services.rerank_service import RerankClient, rerank
 
@@ -183,6 +185,7 @@ class TestRerankClientHttp:
 
 # ---------- 真实 API smoke（沿用 test_embeddings 真调惯例） ----------
 
+@requires_embedding_api
 class TestSiliconFlowRerankSmoke:
     def test_semantically_relevant_doc_ranks_first(self):
         client = RerankClient()

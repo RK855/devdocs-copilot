@@ -1,8 +1,12 @@
 """硅基流动 bge-m3 Embedding —— 真实 API 集成测试"""
 import numpy as np
 
+from conftest import requires_embedding_api
+
 from app.config import settings
 from app.db.embeddings import SiliconFlowEmbeddingFunction
+
+pytestmark = requires_embedding_api
 
 
 class TestSiliconFlowEmbeddingFunction:

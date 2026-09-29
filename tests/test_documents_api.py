@@ -4,9 +4,13 @@ import asyncio
 import pytest
 from fastapi.testclient import TestClient
 
+from conftest import requires_embedding_api
+
 from app.config import settings
 from app.services import document_service
 from main import app
+
+pytestmark = requires_embedding_api
 
 
 @pytest.fixture
