@@ -5,6 +5,7 @@
   - 硅基流动（BAAI/bge-m3）：Embedding
 配置从项目根目录的 .env 读取，自动支持同名环境变量覆盖。
 """
+import sys
 from pathlib import Path
 
 from pydantic import model_validator
@@ -13,6 +14,18 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # 项目根目录（本文件位于 app/config.py，上两级即根目录）
 # 所有相对路径都以它为锚点，换工作目录启动也不会漂移
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# 桌面版（PyInstaller 打包后）路径二分：
+#   APP_HOME     —— exe 所在目录，可写：.env / data / uploads 都落这里，解压即用、删目录即卸载
+#   RESOURCE_DIR —— 包内只读资源（frozen 时为 sys._MEIPASS）：static 前端、预置语料
+# 开发态二者都是项目根，历史行为完全不变
+FROZEN = getattr(sys, "frozen", False)
+if FROZEN:
+    APP_HOME = Path(sys.executable).resolve().parent
+    RESOURCE_DIR = Path(getattr(sys, "_MEIPASS", str(APP_HOME)))
+else:
+    APP_HOME = BASE_DIR
+    RESOURCE_DIR = BASE_DIR
 
 
 class Settings(BaseSettings):
@@ -52,12 +65,12 @@ class Settings(BaseSettings):
 
     # ===== 向量数据库 =====
     COLLECTION_NAME: str = "devdocs"
-    CHROMA_DATA_DIR: Path = BASE_DIR / "data" / "chroma"
+    CHROMA_DATA_DIR: Path = APP_HOME / "data" / "chroma"
 
     # ===== 文档配置 =====
     CHUNK_SIZE: int = 500                     # 每个文本块大小（字符数）
     CHUNK_OVERLAP: int = 50                   # 块间重叠（字符数）
-    UPLOAD_DIR: Path = BASE_DIR / "uploads"
+    UPLOAD_DIR: Path = APP_HOME / "uploads"
 
     # ===== 检索配置（两阶段：粗排 → RRF → 精排） =====
     RETRIEVAL_MODE: str = "hybrid"            # 问答默认检索模式：vector / bm25 / hybrid（F6）
@@ -68,18 +81,18 @@ class Settings(BaseSettings):
                                              # 依据真实观测校准：相关问题 0.76 / 无关问题 0.35
 
     model_config = SettingsConfigDict(
-        env_file=BASE_DIR / ".env",           # .env 固定从项目根读取
+        env_file=APP_HOME / ".env",           # 开发态在项目根；桌面版在 exe 所在目录
         env_file_encoding="utf-8",
         extra="ignore",                       # .env 里多余的键不报错
     )
 
     @model_validator(mode="after")
     def anchor_relative_paths(self) -> "Settings":
-        """.env 里若写了相对路径，统一锚定到项目根目录，避免依赖启动时的工作目录"""
+        """.env 里若写了相对路径，统一锚定到应用主目录，避免依赖启动时的工作目录"""
         for name in ("CHROMA_DATA_DIR", "UPLOAD_DIR"):
             path = getattr(self, name)
             if not path.is_absolute():
-                setattr(self, name, (BASE_DIR / path).resolve())
+                setattr(self, name, (APP_HOME / path).resolve())
         return self
 
 

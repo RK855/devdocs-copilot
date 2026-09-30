@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.config import BASE_DIR, settings
+from app.config import RESOURCE_DIR, settings
 from app.db.bm25_store import bm25_store
 from app.db.vector_store import VectorStore
 from app.errors import DocumentValidationError
@@ -20,8 +20,8 @@ from app.routes.agent import router as agent_router
 from app.routes.documents import router as documents_router
 from app.services import document_service
 
-# 前端静态目录：基于本文件位置的绝对路径，从任意工作目录启动都能找到
-STATIC_DIR = BASE_DIR / "static"
+# 前端静态目录：开发态在项目根，桌面版在包内 _MEIPASS，从任意工作目录启动都能找到
+STATIC_DIR = RESOURCE_DIR / "static"
 
 
 @asynccontextmanager

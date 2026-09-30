@@ -93,8 +93,12 @@ async def seed_directory(
     return result
 
 
-async def _run(directory: Path, recursive: bool) -> SeedResult:
-    """真实接线：整个批次复用同一 VectorStore / BM25 实例"""
+async def run_seed(directory: Path, recursive: bool) -> SeedResult:
+    """真实接线：整个批次复用同一 VectorStore / BM25 实例。
+
+    桌面版启动器（run_desktop.py）首启灌库时直接复用本函数，
+    与命令行 ``python -m app.scripts.seed`` 走完全相同的链路。
+    """
     store = await asyncio.to_thread(VectorStore)
     bm25 = BM25Store()
 
@@ -140,7 +144,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    result = asyncio.run(_run(Path(args.directory), args.recursive))
+    result = asyncio.run(run_seed(Path(args.directory), args.recursive))
     if result.failed:
         sys.exit(1)
 

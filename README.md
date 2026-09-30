@@ -5,6 +5,7 @@
 [![ChromaDB](https://img.shields.io/badge/ChromaDB-1.5.9-FF6B35)](https://www.trychroma.com/)
 [![Tests](https://img.shields.io/badge/tests-319%20passed-success)](https://docs.pytest.org/)
 [![SSE](https://img.shields.io/badge/SSE-RAG%20%2B%20Agent%20%E5%AE%9E%E6%97%B6%E8%BF%9B%E5%BA%A6-gold)](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events)
+[![Windows](https://img.shields.io/badge/Windows-%E5%85%8D%E5%AE%89%E8%A3%85%E6%A1%8C%E9%9D%A2%E7%89%88-0078D4?logo=windows&logoColor=white)](https://github.com/RK855/devdocs-copilot/releases/latest)
 
 > 给开发文档装上一个**可溯源、会拒答、能兜底**的 AI 问答助手：先查文档再回答，查不到就明说，而不是一本正经地编造。
 
@@ -17,7 +18,8 @@ DevDocs Copilot 是一个从零实现的 RAG（检索增强生成）+ Agent 应�
 - [核心特性](#核心特性)
 - [功能矩阵](#功能矩阵)
 - [系统架构](#系统架构)
-- [快速开始](#快速开始)
+- [桌面版（免 Python，普通用户）](#桌面版免-python普通用户)
+- [快速开始（从源码运行）](#快速开始从源码运行)
 - [API 一览](#api-一览)
 - [评测报告](#评测报告)
 - [工程实践亮点](#工程实践亮点)
@@ -47,6 +49,7 @@ DevDocs Copilot 是一个从零实现的 RAG（检索增强生成）+ Agent 应�
 | RAG 问答 | 非流式 `/query` + SSE 流式 `/stream`（停止/重试/中断保留）、统一拒答与故障话术、来源卡带 relevance 分 |
 | Agent 问答 | ReAct 多轮循环、三工具（文档检索 / 接地代码生成 / 报错解释）、steps 三态轨迹、缓存与去重、超步护栏、通用知识兜底、**SSE 实时进度轨迹（轮次/查询词/三态/计时/可中断）** |
 | 可运维性 | `.env` 双供应商配置、lifespan 启动重建索引、/docs 自动文档、未知 API 统一 JSON 404、失败 fail-open 不拖垮主链路 |
+| 桌面分发 | PyInstaller onedir 绿色包：双击即用（首启记事本引导配 Key）、预置语料自动灌库、空闲端口自适应、自动开浏览器；`.env`/数据外置 exe 旁，删目录即卸载 |
 
 ## 系统架构
 
@@ -100,7 +103,27 @@ flowchart TD
     Gate2 -->|"否（用户已上传新文档等）"| A
 ```
 
-## 快速开始
+## 桌面版（免 Python，普通用户）
+
+不想装 Python？提供 Windows 绿色包（Win10 及以上 / x64），解压即用，无需任何环境配置——Python 运行时与全部依赖已随包携带。
+
+> **两个前提省不掉**：① 运行时必须联网（模型在云端，exe 内不含模型）；② 需要你自己的两个模型 API Key（申请方式见[环境要求](#1-环境要求)），两家平台的对应模型**目前官网均可免费申请**，注册即领，Key 只保存在你本机的 `.env` 中，不会随包分发。
+
+1. 到 [Releases 页面](https://github.com/RK855/devdocs-copilot/releases/latest) 下载 `DevDocsCopilot-<版本>-windows-x64.zip`；
+2. 解压到任意目录后双击其中的 **`DevDocsCopilot.exe`**（不要直接在压缩包内运行）；
+3. **首次启动**控制台会给出免费申请指引（直接回车可同时打开两个平台的注册页，已有 Key 可输入 `n` 跳过），并用记事本打开 exe 同目录生成的 `.env`：文件顶部有完整填写说明——把两个 Key 粘到对应等号后面、Ctrl+S 保存，回到黑色窗口按回车退出，再重新双击 exe；想用其他 OpenAI 兼容平台也有换模型指引；
+4. 随后自动把 **3 篇随包项目文档**（《项目说明文档》《项目使用文档》《AI 术语手册》）灌入向量库（仅首次，需联网，文档篇幅较大，约需几分钟），完成后浏览器会自动打开问答界面，开箱即可向"项目自身"提问；
+5. 使用期间**不要关闭黑色控制台窗口**——它就是服务本体，关窗即退出。下次双击启动秒开，数据与配置都在。
+
+端口默认 8000，被占用时自动顺延寻找空闲端口；服务只监听 `127.0.0.1`，不向局域网暴露。
+
+**SmartScreen 提示「Windows 已保护你的电脑」？** 本软件未购买商业代码签名证书，点「更多信息」→「仍要运行」即可；全部代码开源，也可按[本节](#7-自行打包-windows-桌面版)自行打包复现。
+
+**数据与卸载**：`.env`（含你的 Key）、`data/`（向量库）、`uploads/`（上传的原文件）全部位于 exe 同目录，不写注册表、不散落系统目录——卸载就是关闭程序后删掉整个文件夹。
+
+---
+
+## 快速开始（从源码运行）
 
 ### 1. 环境要求
 
@@ -180,6 +203,22 @@ python -m pytest -q          # 零配置即可跑：263 passed, 56 skipped（约
 ```
 
 > 绝大多数测试以 Fake LLM / Stub Transport / 临时目录运行，**零网络零等待**。56 个集成与全链路用例（embedding、Chroma 入库、rerank smoke、三个 HTTP 全链路文件）会调用**真实硅基流动 API**，它们由 `tests/conftest.py` 统一门控：检测不到 `SILICONFLOW_API_KEY` 时自动 SKIP，克隆后零配置也能全绿；在 `.env` 配好 Key 后自动参与运行，全量 319 个约 40 秒跑完。
+
+### 7. 自行打包 Windows 桌面版
+
+在 Windows 上、已安装项目依赖的虚拟环境中执行：
+
+```powershell
+pip install -r requirements-build.txt   # PyInstaller + Pillow
+.\build_exe.ps1 -Version 1.0.0
+```
+
+产物：`dist/DevDocsCopilot/`（绿色程序目录）与 `dist/DevDocsCopilot-1.0.0-windows-x64.zip`（可直接作为 GitHub Release 资产上传）。
+
+- 打包入口是 `run_desktop.py`，采用 **onedir** 形态（Chroma 带重依赖，onefile 每次启动需解压数百 MB，不可接受）；
+- 包内只含只读资源（`static` 前端、`desktop_seed/` 预置语料（3 篇项目文档）、`.env.example`）；`.env`、`data/`、`uploads/` 均在运行时生成于 exe 同目录，打包脚本在压缩前还会再清一遍残留；
+- 想换图标：替换 `assets/icon.png`（建议 1024×1024 正方形）后重跑脚本，`scripts/make_icon.py` 会自动生成 16~256 的多尺寸 ICO；
+- 打包过程不需要任何 API Key，`.env` 也不会进包。
 
 ## API 一览
 
@@ -303,8 +342,11 @@ curl.exe -X POST http://127.0.0.1:8000/api/agent/query -H "Content-Type: applica
 ```
 devdocs-copilot/
 ├── main.py                     # 应用入口：lifespan / CORS / 路由注册 / 静态兜底
+├── run_desktop.py              # 桌面版启动器（PyInstaller 入口）：Key 引导/首启灌库/空闲端口/开浏览器
+├── devdocs-copilot.spec        # PyInstaller 打包配置（onedir，datas/hiddenimports/excludes）
+├── build_exe.ps1               # 一键打包：生成图标 → 打包 → 清运行时残留 → 压 Release zip
 ├── app/
-│   ├── config.py               # .env 配置中心（双供应商、检索/切分参数）
+│   ├── config.py               # .env 配置中心（双供应商、检索/切分参数、frozen 路径二分）
 │   ├── schemas.py              # Pydantic 对外契约（含 doc_ids / allow_general）
 │   ├── routes/                 # documents · chat · agent（HTTP 薄层）
 │   ├── services/
@@ -317,12 +359,16 @@ devdocs-copilot/
 │   │   ├── llm_client.py         # Agnes 客户端（重试/退避/异常分类）
 │   │   └── document_*.py         # 校验 / 解析 / 切分 / 摄入编排
 │   ├── db/                     # vector_store(Chroma) · bm25_store · embeddings
-│   └── scripts/                # seed 灌库 · backfill 存量迁移
-├── static/index.html           # 单文件前端（零 npm）
-├── eval/                       # 题集、14 份固定语料、评测脚本与历史结果
+│   └── scripts/                # seed 灌库（桌面首启复用 run_seed）· backfill 存量迁移
+├── static/                     # 单文件前端 index.html（零 npm）+ favicon
+├── assets/                     # icon.png 源图 / 生成的 icon.ico（exe 图标）
+├── scripts/make_icon.py        # PNG → 多尺寸 ICO 转换
+├── desktop_seed/               # 桌面版预置语料（3 篇项目文档，首启自动灌库）
+├── eval/                       # 评测题集、14 份评测专用语料(corpus/)、评测脚本与历史结果
 ├── tests/                      # 319 个测试（21 个测试文件 + conftest.py 无 Key 自动跳过门控）
-├── uploads/  data/             # 源文件与 Chroma 持久化目录
+├── uploads/  data/             # 源文件与 Chroma 持久化目录（桌面版位于 exe 同目录）
 ├── requirements.txt            # 直接依赖
+├── requirements-build.txt      # 打包专用依赖（PyInstaller / Pillow）
 └── requirements-lock.txt       # 全量版本快照
 ```
 

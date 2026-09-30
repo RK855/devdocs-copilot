@@ -1,0 +1,4 @@
+# 仅"打包桌面版 exe / 生成图标"时需要额外安装；运行项目与跑测试不需要。
+# 用法：pip install -r requirements.txt -r requirements-build.txt
+pyinstaller==6.22.3
+pillow==12.3.0
