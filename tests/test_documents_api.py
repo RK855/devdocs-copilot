@@ -59,6 +59,15 @@ class TestUploadApi:
         )
         assert r.status_code == 400
 
+    def test_oversized_upload_rejected_before_full_read(self, client):
+        # 10MB+1 字节：路由层在整体读入内存前就按 file.size 拒绝
+        r = client.post(
+            "/api/documents/upload",
+            files={"file": ("big.md", b"a" * (10 * 1024 * 1024 + 1), "text/markdown")},
+        )
+        assert r.status_code == 400
+        assert "10MB" in r.json()["detail"]
+
 
 class TestListAndDeleteApi:
     def test_full_list_then_delete_flow(self, client):

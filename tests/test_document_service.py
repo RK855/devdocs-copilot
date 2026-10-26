@@ -73,6 +73,13 @@ class FakeBM25:
         self.deleted.append(doc_id)
 
 
+class ExplodingStore(FakeStore):
+    """add_document 必炸：模拟向量库 / embedding 供应商故障"""
+
+    def add_document(self, doc_id, chunks, filename, pages=None, source="upload"):
+        raise RuntimeError("embedding 供应商不可用")
+
+
 @pytest.fixture
 def fake_store():
     return FakeStore()
@@ -196,6 +203,33 @@ class TestIngestDocument:
         assert result["source"] == "seed"
         assert fake_store.added[0]["source"] == "seed"
 
+    async def test_vector_store_failure_cleans_up_saved_file(self, upload_dir):
+        with pytest.raises(RuntimeError):
+            await document_service.ingest_document(
+                "a.md", b"FastAPI", store=ExplodingStore(), upload_dir=upload_dir
+            )
+        # 向量库写失败 → 刚落盘的源文件被清掉，不留孤儿
+        assert list(upload_dir.iterdir()) == []
+
+    async def test_unparsable_file_maps_to_validation_error(self, fake_store, upload_dir):
+        # 非 UTF-8 且非 GBK 的字节：解析器两层解码都失败，须收敛为 400 业务错误
+        with pytest.raises(DocumentValidationError, match="解析失败"):
+            await document_service.ingest_document(
+                "broken.txt", b"\xff\xfe\xfa\xff", store=fake_store, upload_dir=upload_dir
+            )
+        assert list(upload_dir.iterdir()) == []
+        assert fake_store.added == []
+
+    async def test_filename_with_path_segments_is_flattened(self, fake_store, upload_dir):
+        result = await document_service.ingest_document(
+            "sub/dir/note.md", b"FastAPI", store=fake_store, upload_dir=upload_dir
+        )
+        assert result["filename"] == "note.md"
+        assert fake_store.added[0]["filename"] == "note.md"
+        saved = list(upload_dir.iterdir())
+        assert len(saved) == 1
+        assert saved[0].name.endswith("_note.md")
+
 
 class TestListAndDelete:
     async def test_list_documents_passes_through_store(self, fake_store, upload_dir):
@@ -267,3 +301,13 @@ class TestListAndDelete:
         )
 
         assert fake_bm25.deleted == [result["doc_id"]]
+
+    async def test_delete_with_glob_metachar_doc_id_is_contained(self, fake_store, upload_dir):
+        # doc_id 直接来自 URL：通配符不得放大成 glob 语义删光整个上传目录
+        await document_service.ingest_document("a.md", b"aaa", store=fake_store, upload_dir=upload_dir)
+        await document_service.ingest_document("b.md", b"bbb", store=fake_store, upload_dir=upload_dir)
+
+        await document_service.delete_document("*", store=fake_store, upload_dir=upload_dir)
+
+        assert len(list(upload_dir.iterdir())) == 2
+        assert fake_store.deleted == ["*"]

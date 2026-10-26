@@ -691,6 +691,7 @@ html[data-theme="light"] .general-tag {
 
 <script src="https://cdn.bootcdn.net/ajax/libs/marked/12.0.0/marked.min.js"></script>
 <script src="https://cdn.bootcdn.net/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/dompurify/3.0.9/purify.min.js"></script>
 <script>
 "use strict";
 
@@ -1170,7 +1171,10 @@ async function uploadFile(file) {
 function renderMarkdown(container, md) {
   if (window.marked) {
     marked.setOptions({ breaks: true, gfm: true });
-    container.innerHTML = marked.parse(md);
+    const html = marked.parse(md);
+    // 回答正文会引用用户上传的文档内容，必须净化后再入 DOM，
+    // 防止文档内容经提示注入带出 <img onerror> 之类脚本向量
+    container.innerHTML = window.DOMPurify ? DOMPurify.sanitize(html) : fallbackRender(md);
   } else {
     container.innerHTML = fallbackRender(md);
   }
@@ -1350,7 +1354,12 @@ function createSSEParser(onEvent) {
         if (line.startsWith("event:")) event = line.slice(6).trim();
         else if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
       });
-      if (dataLines.length) onEvent(event, JSON.parse(dataLines.join("\n")));
+      if (dataLines.length) {
+        // 单帧 JSON 损坏只跳过该帧，不让整条流崩成"请求失败"
+        try {
+          onEvent(event, JSON.parse(dataLines.join("\n")));
+        } catch (_) { /* 脏帧忽略 */ }
+      }
     }
   };
 }

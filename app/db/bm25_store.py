@@ -1,10 +1,11 @@
 """BM25 关键词检索（F5）
 
 与向量检索互补：向量懂语义，BM25 精于词面匹配（代码标识符、报错信息、专有名词）。
-纯内存索引，三条平行数组作为真相源：
-  _tokens[i]   ── 第 i 个 chunk 的分词结果
-  _contents[i] ── 第 i 个 chunk 原文
-  _metadatas[i]── 第 i 个 chunk 的归属信息
+纯内存索引，四条平行数组作为真相源：
+  _tokens[i]     ── 第 i 个 chunk 的分词结果
+  _token_sets[i] ── 第 i 个 chunk 的分词集合（候选预筛用，免得每次查询重建 set）
+  _contents[i]   ── 第 i 个 chunk 原文
+  _metadatas[i]  ── 第 i 个 chunk 的归属信息
 BM25Okapi 对象本身不可变，任何增删后整体重建（语料量级轻，开销可忽略）。
 启动时从 Chroma 全量重建兜底，保证与向量库不漂移。
 """
@@ -53,6 +54,7 @@ def tokenize(text: str) -> list[str]:
 class BM25Store:
     def __init__(self):
         self._tokens: list[list[str]] = []
+        self._token_sets: list[set[str]] = []
         self._contents: list[str] = []
         self._metadatas: list[dict] = []
         self._bm25: BM25Okapi | None = None
@@ -72,7 +74,9 @@ class BM25Store:
         """追加一篇文档的全部 chunk（chunk_id 规则与 VectorStore 完全一致）"""
         with self._lock:
             for i, content in enumerate(chunks):
-                self._tokens.append(tokenize(content))
+                tokens = tokenize(content)
+                self._tokens.append(tokens)
+                self._token_sets.append(set(tokens))
                 self._contents.append(content)
                 metadata = {"doc_id": doc_id, "filename": filename, "chunk_index": i}
                 if pages is not None:
@@ -86,21 +90,26 @@ class BM25Store:
         """移除该文档的全部 chunk 后重建；doc_id 不存在时静默无操作"""
         with self._lock:
             kept = [
-                (tokens, content, metadata)
-                for tokens, content, metadata in zip(self._tokens, self._contents, self._metadatas)
+                (tokens, token_set, content, metadata)
+                for tokens, token_set, content, metadata in zip(
+                    self._tokens, self._token_sets, self._contents, self._metadatas,
+                    strict=True,
+                )
                 if metadata["doc_id"] != doc_id
             ]
             if len(kept) == len(self._tokens):
                 return
             self._tokens = [item[0] for item in kept]
-            self._contents = [item[1] for item in kept]
-            self._metadatas = [item[2] for item in kept]
+            self._token_sets = [item[1] for item in kept]
+            self._contents = [item[2] for item in kept]
+            self._metadatas = [item[3] for item in kept]
             self._rebuild_index()
 
     def clear(self) -> None:
         """清空内存索引（主要给测试隔离用）"""
         with self._lock:
             self._tokens = []
+            self._token_sets = []
             self._contents = []
             self._metadatas = []
             self._bm25 = None
@@ -110,6 +119,7 @@ class BM25Store:
         chunks = vector_store.get_all_chunks()
         with self._lock:
             self._tokens = [tokenize(c["content"]) for c in chunks]
+            self._token_sets = [set(tokens) for tokens in self._tokens]
             self._contents = [c["content"] for c in chunks]
             self._metadatas = [
                 {
@@ -139,9 +149,10 @@ class BM25Store:
 
             scope = set(doc_ids) if doc_ids else None
             query_vocab = set(query_tokens)
+            # token_set 建索引时已备好，候选预筛只做集合交集，不随语料增长变慢
             candidates = [
-                i for i, doc_tokens in enumerate(self._tokens)
-                if query_vocab & set(doc_tokens)
+                i for i, doc_vocab in enumerate(self._token_sets)
+                if query_vocab & doc_vocab
                 and (scope is None or self._metadatas[i]["doc_id"] in scope)
             ]
             if not candidates:

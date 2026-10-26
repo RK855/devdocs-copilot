@@ -4,8 +4,6 @@ import chromadb
 from app.config import settings
 from app.db.embeddings import SiliconFlowEmbeddingFunction
 
-# 文档来源：seed=脚本灌库的预置语料 / upload=网页上传
-DOCUMENT_SOURCES = ("seed", "upload")
 # 升级前写入的历史 chunk 没有 source 字段，列表聚合时的防御性归类
 LEGACY_DEFAULT_SOURCE = "seed"
 

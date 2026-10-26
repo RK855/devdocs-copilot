@@ -7,6 +7,7 @@ import pytest
 from openai import AuthenticationError
 from pydantic import ValidationError
 
+from app.config import settings
 from app.schemas import AgentChatResponse, AgentStep
 from app.services import agent_service
 from app.services.evidence_service import Evidence
@@ -1341,3 +1342,16 @@ class TestAgentProgressEvents:
 
         assert resp.mode == "general"
         assert events[-1] == {"type": "phase", "phase": "answering"}
+
+
+async def test_run_agent_without_llm_and_missing_api_key_returns_error(monkeypatch):
+    """真实构造缝（agent_service.AgnesChatClient）遇缺 Key 抛异常：
+    与 chat/stream 链路同纪律，收敛为 error 态业务响应，而不是裸异常炸出 500"""
+    monkeypatch.setattr(settings, "AGNES_API_KEY", "")
+
+    resp = await agent_service.run_agent("FastAPI 怎么启动？")
+
+    assert resp.mode == "error"
+    assert resp.answer == AUTH_ERROR_MESSAGE
+    assert resp.steps == []
+    assert resp.sources == []

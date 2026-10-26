@@ -29,10 +29,9 @@ datas = [
 ]
 binaries = []
 hiddenimports = [
-    # python-multipart / aiofiles：FastAPI 文件上传链路运行时才查找
+    # python-multipart：FastAPI 文件上传链路运行时才查找
     "multipart",
     "multipart.multipart",
-    "aiofiles",
 ]
 
 # ---- 2. 带数据文件或动态发现子模块的包，整包收集（静态分析扫不全） ----

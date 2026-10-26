@@ -145,8 +145,8 @@ def _check_keys(settings, env_path: Path) -> None:
 
 
 def _find_free_port(preferred: int) -> int:
-    """从首选端口开始找一个本机空闲 TCP 端口，最多试 20 个；都不行就交 OS 分配"""
-    for port in range(preferred, preferred + 20):
+    """从首选端口开始找一个本机空闲 TCP 端口，最多试 100 个；找不到返回 0"""
+    for port in range(preferred, preferred + 100):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             try:
                 sock.bind(("127.0.0.1", port))
@@ -204,6 +204,11 @@ def main() -> None:
     from main import app
 
     port = _find_free_port(int(settings.PORT))
+    if port == 0:
+        # 交 OS 分配随机端口的话，横幅与自动打开的浏览器拿不到真实端口，服务等于不可用
+        print(f"[错误] 端口 {settings.PORT} 起连续 100 个端口都被占用，无法启动服务。")
+        print("       请释放端口，或在 .env 中把 PORT 改为其他值后重试。")
+        sys.exit(1)
     url = f"http://127.0.0.1:{port}/"
 
     _seed_bundled_corpus_if_empty(RESOURCE_DIR)

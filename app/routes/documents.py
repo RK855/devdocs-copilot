@@ -5,6 +5,7 @@ from app.errors import DocumentValidationError
 from app.schemas import DeleteResponse, DocumentListResponse, UploadResponse
 from app.services import document_service
 from app.services.document_service import DOCUMENT_SCOPES
+from app.services.document_validator import MAX_FILE_SIZE
 
 router = APIRouter()
 
@@ -12,6 +13,9 @@ router = APIRouter()
 @router.post("/upload", response_model=UploadResponse, summary="上传文档")
 async def upload_document(file: UploadFile = File(...)):
     """支持 .md / .txt / .pdf / .docx；单个文件不超过 10MB"""
+    # size 在 multipart 解析期已逐块统计，先拒超大文件，避免整体读入内存后才拒绝
+    if file.size is not None and file.size > MAX_FILE_SIZE:
+        raise DocumentValidationError("文件超过 10MB 大小限制")
     data = await file.read()
     result = await document_service.ingest_document(file.filename, data)
     return UploadResponse(**result)

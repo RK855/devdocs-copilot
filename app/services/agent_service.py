@@ -388,7 +388,18 @@ async def run_agent(
         tool_end（完整 AgentStep）/ phase=answering（终答/通用知识生成前）。
     """
     started = time.perf_counter()
-    chat_llm = llm or AgnesChatClient()
+    try:
+        # 与 chat/stream 链路同一纪律：真实客户端构造失败（缺/错 API Key 等）
+        # 收敛为业务错误态而不是裸 500；llm 注入时原样透传
+        chat_llm = llm or AgnesChatClient()
+    except Exception:
+        return AgentChatResponse(
+            answer=AUTH_ERROR_MESSAGE,
+            sources=[],
+            mode="error",
+            response_time=round(time.perf_counter() - started, 2),
+            steps=[],
+        )
     registry = registry or _default_registry()
 
     async def _emit(event: ProgressEvent) -> None:

@@ -3,13 +3,13 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![ChromaDB](https://img.shields.io/badge/ChromaDB-1.5.9-FF6B35)](https://www.trychroma.com/)
-[![Tests](https://img.shields.io/badge/tests-319%20passed-success)](https://docs.pytest.org/)
+[![Tests](https://img.shields.io/badge/tests-328%20passed-success)](https://docs.pytest.org/)
 [![SSE](https://img.shields.io/badge/SSE-RAG%20%2B%20Agent%20%E5%AE%9E%E6%97%B6%E8%BF%9B%E5%BA%A6-gold)](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events)
 [![Windows](https://img.shields.io/badge/Windows-%E5%85%8D%E5%AE%89%E8%A3%85%E6%A1%8C%E9%9D%A2%E7%89%88-0078D4?logo=windows&logoColor=white)](https://github.com/RK855/devdocs-copilot/releases/latest)
 
 > 给开发文档装上一个**可溯源、会拒答、能兜底**的 AI 问答助手：先查文档再回答，查不到就明说，而不是一本正经地编造。
 
-DevDocs Copilot 是一个从零实现的 RAG（检索增强生成）+ Agent 应用：把团队的 Markdown / TXT / PDF / DOCX 文档摄入本地向量库，用户提问时经 **BM25 + 向量混合检索 → RRF 融合 → Rerank 二次精排 → 证据门** 两道门槛后再交给大模型作答；Agent 模式下模型以 ReAct 循环自主调用三个工具多轮查证，**执行过程经 SSE 实时上屏**（当前轮次、查询词、成败状态、计时），不再让用户面对黑盒空等。全程 FastAPI 异步服务 + 单文件零构建前端，319 个测试严格 TDD 护航。
+DevDocs Copilot 是一个从零实现的 RAG（检索增强生成）+ Agent 应用：把团队的 Markdown / TXT / PDF / DOCX 文档摄入本地向量库，用户提问时经 **BM25 + 向量混合检索 → RRF 融合 → Rerank 二次精排 → 证据门** 两道门槛后再交给大模型作答；Agent 模式下模型以 ReAct 循环自主调用三个工具多轮查证，**执行过程经 SSE 实时上屏**（当前轮次、查询词、成败状态、计时），不再让用户面对黑盒空等。全程 FastAPI 异步服务 + 单文件零构建前端，328 个测试严格 TDD 护航。
 
 ---
 
@@ -37,13 +37,13 @@ DevDocs Copilot 是一个从零实现的 RAG（检索增强生成）+ Agent 应�
 - **接地优先的通用知识兜底** —— Agent 穷尽检索仍无答案时，用户可显式点击「用通用知识再答」；服务端**重跑完整检索**确认仍无证据后才切换提示词，答案首行强制免责声明（服务端后置补齐，不靠模型自觉）。授权仅当次请求有效，不写会话、不留状态。
 - **文档级检索范围** —— 按视图或自选文档圈定检索范围（`doc_ids` 下推 Chroma `where` + BM25 候选预筛），范围过滤严格先于 top-K。
 - **对称异常矩阵，永不裸奔 500** —— 检索故障 / LLM 认证失败 / 限流 / 流式中断各有固定文案与模式（`rag`/`agent`/`reject`/`error`/`general`）；问答端点的业务故障恒以 HTTP 200 返回（参数校验仍走标准 4xx），前端按态渲染。
-- **单文件金色主题前端** —— 原生 HTML/CSS/JS 一个文件，Marked.js + Highlight.js 走 CDN，零 npm 零构建；深浅主题、拖拽批量上传、Markdown 渲染、代码复制、移动端抽屉齐备。
+- **单文件金色主题前端** —— 原生 HTML/CSS/JS 一个文件，Marked.js + Highlight.js + DOMPurify 走 CDN，零 npm 零构建；深浅主题、拖拽批量上传、Markdown 渲染、代码复制、移动端抽屉齐备。回答正文经 DOMPurify 净化后才入 DOM——文档内容可能被提示注入带出脚本向量，净化挡在渲染之前。
 
 ## 功能矩阵
 
 | 模块 | 能力 |
 |---|---|
-| 文档摄入 | `.md/.txt/.pdf/.docx` 解析（python-docx / pypdf，含页码标注）、500+50 重叠切分、10MB 与空文件校验、批量上传、落盘 + 向量库 + BM25 三写一致 |
+| 文档摄入 | `.md/.txt/.pdf/.docx` 解析（python-docx / pypdf，含页码标注）、500+50 重叠切分、10MB 校验（路由层按 `size` 预检，超大文件不整体读入内存）、批量上传、落盘 + 向量库 + BM25 三写一致；Embedding 按批次自动分批请求（大文档不受供应商单请求条数限制），向量库写失败自动清理已落盘文件不留孤儿 |
 | 语料治理 | seed/upload 双来源标记、`?source=` 过滤、预置/上传分视图、本地灌库脚本（幂等）、存量库一键迁移 metadata |
 | 检索 | 向量检索 / BM25 / hybrid 三模式、RRF 融合、bge-reranker 精排、双层证据门、文档级范围过滤 |
 | RAG 问答 | 非流式 `/query` + SSE 流式 `/stream`（停止/重试/中断保留）、统一拒答与故障话术、来源卡带 relevance 分 |
@@ -115,7 +115,7 @@ flowchart TD
 4. 随后自动把 **3 篇随包项目文档**（《项目说明文档》《项目使用文档》《AI 术语手册》）灌入向量库（仅首次，需联网，文档篇幅较大，约需几分钟），完成后浏览器会自动打开问答界面，开箱即可向"项目自身"提问；
 5. 使用期间**不要关闭黑色控制台窗口**——它就是服务本体，关窗即退出。下次双击启动秒开，数据与配置都在。
 
-端口默认 8000，被占用时自动顺延寻找空闲端口；服务只监听 `127.0.0.1`，不向局域网暴露。
+端口默认 8000，被占用时自动顺延寻找空闲端口（最多试 100 个，全部被占则明确报错退出）；服务只监听 `127.0.0.1`，不向局域网暴露。
 
 **SmartScreen 提示「Windows 已保护你的电脑」？** 本软件未购买商业代码签名证书，点「更多信息」→「仍要运行」即可；全部代码开源，也可按[本节](#7-自行打包-windows-桌面版)自行打包复现。
 
@@ -131,7 +131,7 @@ flowchart TD
 - 可访问外网：模型 API 为云端服务；前端 Markdown/代码高亮库走 CDN
 - **两类模型服务（不绑定特定厂商，任意兼容供应商均可）**：
   1. **一个可对话的大模型** —— 提供 OpenAI 兼容的 `/chat/completions` 接口；使用 Agent 模式还要求模型支持 **Function Calling（工具调用）**；
-  2. **一个向量（embedding）模型** —— 为文档块和用户问题生成向量。向量维度在建库后不可更改，`.env` 的 `EMBEDDING_DIM` 必须与模型实际维度一致；更换 embedding 模型需清空 `data/chroma/` 后重建索引。
+  2. **一个向量（embedding）模型** —— 为文档块和用户问题生成向量。向量维度在建库后不可更改，`.env` 的 `EMBEDDING_DIM` 必须与模型实际维度一致；更换 embedding 模型需清空 `data/chroma/` 后重建索引。供应商 embeddings 接口普遍有单请求条数上限，上传时客户端按 `EMBEDDING_BATCH_SIZE`（默认 32）自动分批，一般无需改动。
   - 可选：**一个 rerank 精排模型**。没有也能运行——设 `RERANK_ENABLED=false` 即退回纯 RRF 排序（运行中精排服务故障也会 fail-open 自动降级），仅损失二次精排与二次证据门。
 - 端点地址、模型名、Key 全部在 `.env` 中配置（base_url + 模型名 + Key 三件套），换供应商无需改代码。**本项目开发时实际使用的两家（仅为具体示例，并非硬性要求）**：
   - **Agnes** —— 聊天 / Function Calling：<https://agnes-ai.com>
@@ -171,7 +171,7 @@ AGNES_API_KEY=sk-xxxx
 SILICONFLOW_API_KEY=sk-xxxx
 ```
 
-> 使用其他 OpenAI 兼容供应商时，同步修改同文件中的 `AGNES_BASE_URL` / `CHAT_MODEL`（对话模型）与 `SILICONFLOW_BASE_URL` / `EMBEDDING_MODEL` / `EMBEDDING_DIM`（向量模型，注意维度一致）；不使用精排则加一行 `RERANK_ENABLED=false`。变量名保留历史命名，不影响接入任何供应商。
+> 使用其他 OpenAI 兼容供应商时，同步修改同文件中的 `AGNES_BASE_URL` / `CHAT_MODEL`（对话模型）与 `SILICONFLOW_BASE_URL` / `EMBEDDING_MODEL` / `EMBEDDING_DIM`（向量模型，注意维度一致）；不使用精排则加一行 `RERANK_ENABLED=false`。变量名保留历史命名，不影响接入任何供应商。若新供应商的 embedding 批量上限更小，把 `EMBEDDING_BATCH_SIZE` 调到其上限以内即可。
 
 ### 4. 启动
 
@@ -199,10 +199,10 @@ python -m app.scripts.seed ./eval/corpus --recursive
 ### 6. 运行测试
 
 ```bash
-python -m pytest -q          # 零配置即可跑：263 passed, 56 skipped（约 6 秒）
+python -m pytest -q          # 零配置即可跑：271 passed, 57 skipped（约 6 秒）
 ```
 
-> 绝大多数测试以 Fake LLM / Stub Transport / 临时目录运行，**零网络零等待**。56 个集成与全链路用例（embedding、Chroma 入库、rerank smoke、三个 HTTP 全链路文件）会调用**真实硅基流动 API**，它们由 `tests/conftest.py` 统一门控：检测不到 `SILICONFLOW_API_KEY` 时自动 SKIP，克隆后零配置也能全绿；在 `.env` 配好 Key 后自动参与运行，全量 319 个约 40 秒跑完。
+> 绝大多数测试以 Fake LLM / Stub Transport / 临时目录运行，**零网络零等待**。57 个集成与全链路用例（embedding、Chroma 入库、rerank smoke、三个 HTTP 全链路文件）会调用**真实硅基流动 API**，它们由 `tests/conftest.py` 统一门控：检测不到 `SILICONFLOW_API_KEY` 时自动 SKIP，克隆后零配置也能全绿；在 `.env` 配好 Key 后自动参与运行，全量 328 个约 40 秒跑完。
 
 ### 7. 自行打包 Windows 桌面版
 
@@ -234,7 +234,7 @@ pip install -r requirements-build.txt   # PyInstaller + Pillow
 | POST | `/api/agent/query` | Agent 问答（一次性 JSON），返回 `{answer, sources, mode, degraded, response_time, steps}`；保留给 API 客户端与评测脚本使用 |
 | POST | `/api/agent/stream` | Agent 问答（SSE 流式进度），事件序：`phase → tool_start → tool_end → … → done`，`done.data` 即完整 AgentChatResponse（与 /query 同构），详见下节 |
 
-`mode` 五态：`rag` / `agent`（正常接地作答）· `reject`（查过确实没有）· `error`（没查成）· `general`（显式授权后的通用知识作答）。问答端点的业务态（包括故障）**一律以 HTTP 200 返回**，错误信息放在 `mode=error` 的固定文案里（参数校验仍按标准返回 400/422，未知路径返回 404）。另有 `degraded` 字段：表示 `steps` 中有工具执行失败但仍给出了接地答案（部分失败，前端标"回答可能不完整"）——它与 `general` 兜底无关，通用知识作答时 `degraded=false`。
+`mode` 五态：`rag` / `agent`（正常接地作答）· `reject`（查过确实没有）· `error`（没查成）· `general`（显式授权后的通用知识作答）。问答端点的业务态（包括故障）**一律以 HTTP 200 返回**，错误信息放在 `mode=error` 的固定文案里（参数校验与文档解析失败按标准返回 400/422，未知路径返回 404）。另有 `degraded` 字段：表示 `steps` 中有工具执行失败但仍给出了接地答案（部分失败，前端标"回答可能不完整"）——它与 `general` 兜底无关，通用知识作答时 `degraded=false`。
 
 **故障 → 行为对照：**
 
@@ -242,7 +242,9 @@ pip install -r requirements-build.txt   # PyInstaller + Pillow
 |---|---|
 | Rerank 服务超时/5xx | fail-open：跳过精排，按粗排顺序继续作答（不拖垮主链路） |
 | 检索管线全程失败 / Agent 主 LLM 致命异常 | `mode=error` + 固定故障文案，HTTP 200，不伪装成"库里没有" |
-| LLM 401/403 | 立即失败不重试，返回认证文案；429 退避重试；5xx/超时重试一次 |
+| LLM 401/403 | 立即失败不重试，返回认证文案；429 退避重试；5xx/超时重试一次；Key 缺失/无效时问答端点（含 Agent）均返回 `mode=error` 认证文案而非 500 |
+| 损坏/无法解码的文档上传 | 解析异常统一转 400 业务错误（"文档解析失败"），不留残留文件 |
+| 向量库写入失败（如 embedding 供应商故障） | 上传请求报错，已落盘的源文件自动清理，重传不留孤儿 |
 | 流式输出中途中断 | 已吐出的内容保留，标记"已中断"并可原气泡重试 |
 | 库外题 + 通用知识授权 | 重检仍无证据才 `mode=general`；此时若通用知识 LLM 也故障，则回 `mode=error` |
 
@@ -329,8 +331,8 @@ curl.exe -X POST http://127.0.0.1:8000/api/agent/query -H "Content-Type: applica
 
 ## 工程实践亮点
 
-- **严格 TDD（红 → 绿）**：319 个测试随功能增量生长，每个功能先写失败测试再实现；核心链路均以 Fake LLM / Stub Transport / 临时目录隔离（263 个可完全离线，56 个真实 API 集成用例无 Key 自动 SKIP，见[快速开始](#6-运行测试)），配好 Key 全量约 40 秒跑完。
-- **分层 + 构造注入**：routes 不写业务、services 不碰框架、db 对接外部；所有 LLM / Store / 检索器均可注入替身，`create_chat_client()` 是全应用唯一模型构造缝。
+- **严格 TDD（红 → 绿）**：328 个测试随功能增量生长，每个功能先写失败测试再实现；核心链路均以 Fake LLM / Stub Transport / 临时目录隔离（271 个可完全离线，57 个真实 API 集成用例无 Key 自动 SKIP，见[快速开始](#6-运行测试)），配好 Key 全量约 40 秒跑完。
+- **分层 + 构造注入**：routes 不写业务、services 不碰框架、db 对接外部；所有 LLM / Store / 检索器均可注入替身。模型构造缝收敛为两处（chat/stream 共用 `create_chat_client()`，Agent 保留独立的模块级 `AgnesChatClient` 缝以便测试桩互不干扰），两处的构造失败统一收敛为 `mode=error` 业务响应，不裸奔 500。
 - **阻塞调用纪律**：所有 OpenAI/Chroma 同步调用一律 `asyncio.to_thread` 包裹；SSE 用单 daemon worker 线程 + 双队列把同步流桥接成 async 生成器，断连在 `finally` 中兜底关闭。
 - **状态语义不含糊**："拒答 = 查过没有"与"故障 = 没查成"两套话术分离；401/403 立即失败不重试，429 指数退避，5xx 重试一次；空 LLM 输出视同失败，绝不冒充成功。
 - **无状态协议设计**：检索范围、通用知识授权均随请求字段携带，服务端不存会话；契约增量一律带默认值，老客户端行为逐字节不变。
@@ -365,7 +367,7 @@ devdocs-copilot/
 ├── scripts/make_icon.py        # PNG → 多尺寸 ICO 转换
 ├── desktop_seed/               # 桌面版预置语料（3 篇项目文档，首启自动灌库）
 ├── eval/                       # 评测题集、14 份评测专用语料(corpus/)、评测脚本与历史结果
-├── tests/                      # 319 个测试（21 个测试文件 + conftest.py 无 Key 自动跳过门控）
+├── tests/                      # 328 个测试（21 个测试文件 + conftest.py 无 Key 自动跳过门控）
 ├── uploads/  data/             # 源文件与 Chroma 持久化目录（桌面版位于 exe 同目录）
 ├── requirements.txt            # 直接依赖
 ├── requirements-build.txt      # 打包专用依赖（PyInstaller / Pillow）
@@ -377,10 +379,10 @@ devdocs-copilot/
 | 层 | 选型 |
 |---|---|
 | Web | FastAPI 0.141 · Uvicorn · Pydantic v2 · SSE |
-| 检索 | ChromaDB 1.5.9（cosine）· rank_bm25 · jieba · LangChain 文本切分 |
+| 检索 | ChromaDB 1.5.9（cosine）· rank_bm25 · jieba · LangChain text-splitters（独立切分器包，不引入 LangChain 全家桶） |
 | 模型 | Agnes `agnes-2.5-flash`（OpenAI 协议 / Function Calling）· 硅基流动 `bge-m3`（1024 维）· `bge-reranker-v2-m3` |
 | 解析 | pypdf 6 · python-docx 1.2 |
-| 前端 | 原生 HTML/CSS/JavaScript · Marked.js · Highlight.js（CDN，零构建） |
+| 前端 | 原生 HTML/CSS/JavaScript · Marked.js · Highlight.js · DOMPurify（CDN，零构建） |
 | 测试 | pytest · pytest-asyncio · TestClient · Fake/Stub 依赖注入 |
 
 ## 后续规划

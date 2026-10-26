@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     SILICONFLOW_BASE_URL: str = "https://api.siliconflow.cn/v1"
     EMBEDDING_MODEL: str = "BAAI/bge-m3"
     EMBEDDING_DIM: int = 1024                 # bge-m3 向量维度，建库后不可变
+    EMBEDDING_BATCH_SIZE: int = 32            # 单次 embedding 请求的文本条数上限（供应商接口有批量限制）
     RERANK_MODEL: str = "BAAI/bge-reranker-v2-m3"
     RERANK_ENABLED: bool = True               # F7：RRF 后接 bge-reranker 精排；False 退回 F6 纯 RRF
     RERANK_TIMEOUT: float = 20.0              # rerank 单次请求超时（秒）

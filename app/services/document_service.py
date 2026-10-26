@@ -1,5 +1,6 @@
 """文档业务编排：校验 → 解析 → 切分 → 源文件落盘 → 写向量库 → 同步 BM25 索引"""
 import asyncio
+import contextlib
 import uuid
 from collections.abc import Iterable
 from pathlib import Path
@@ -42,16 +43,25 @@ async def ingest_document(
     upload_dir: Path | str | None = None,
     source: str = "upload",
 ) -> dict:
+    # 0. multipart 的 filename 来自客户端，取 basename 防路径分隔符混入落盘路径
+    filename = Path(filename).name
+
     # 1. 先校验，不合法什么都不留
     validate_upload(filename, len(data))
 
-    # 2. 解析 + 切分（纯内存操作）
+    # 2. 解析 + 切分（纯内存操作）。解析器对损坏文件抛的异常（编码/格式错误等）
+    #    统一转业务校验错误，由全局异常处理器回 400，而不是裸 500
     chunks: list[str] = []
     pages: list[int | None] = []
-    for text, page in parse_document(data, filename):
-        for chunk in split_text(text):
-            chunks.append(chunk)
-            pages.append(page)
+    try:
+        for text, page in parse_document(data, filename):
+            for chunk in split_text(text):
+                chunks.append(chunk)
+                pages.append(page)
+    except DocumentValidationError:
+        raise
+    except Exception as exc:
+        raise DocumentValidationError(f"文档解析失败：{exc}") from exc
 
     if not chunks:
         raise DocumentValidationError("文档解析后没有可用内容")
@@ -64,11 +74,18 @@ async def ingest_document(
     await asyncio.to_thread(saved_path.write_bytes, data)
 
     # 4. 写入向量库（阻塞调用扔线程池，不卡死事件循环）
-    vector_store = store or await asyncio.to_thread(VectorStore)
-    pages_arg = pages if any(p is not None for p in pages) else None
-    await asyncio.to_thread(
-        vector_store.add_document, doc_id, chunks, filename, pages_arg, source
-    )
+    try:
+        vector_store = store or await asyncio.to_thread(VectorStore)
+        pages_arg = pages if any(p is not None for p in pages) else None
+        await asyncio.to_thread(
+            vector_store.add_document, doc_id, chunks, filename, pages_arg, source
+        )
+    except Exception:
+        # 向量库写入失败时清掉刚落盘的源文件，不留孤儿；
+        # BM25 失败不回滚（见下），所以清理只挂在向量库这一步
+        with contextlib.suppress(OSError):
+            await asyncio.to_thread(saved_path.unlink)
+        raise
 
     # 5. 同步写入 BM25 内存索引（F5）：与向量库同批 chunks，失败不回滚——启动重建兜底
     bm25_index = bm25 if bm25 is not None else bm25_store
@@ -113,7 +130,15 @@ async def delete_document(
     bm25_index = bm25 if bm25 is not None else bm25_store
     await asyncio.to_thread(bm25_index.delete_document, doc_id)
 
-    # 同步清理该文档的源文件（按 doc_id 前缀定位）
+    # 同步清理该文档的源文件：iterdir + 前缀匹配，不用 glob——
+    # doc_id 直接来自 URL，glob 通配符（如 "*"）会把模式语义放大成删光整个目录
     target_dir = Path(upload_dir or settings.UPLOAD_DIR)
-    for path in target_dir.glob(f"{doc_id}_*"):
+    if not target_dir.is_dir():
+        return
+    prefix = f"{doc_id}_"
+    victims = await asyncio.to_thread(
+        lambda: [p for p in target_dir.iterdir()
+                 if p.is_file() and p.name.startswith(prefix)]
+    )
+    for path in victims:
         await asyncio.to_thread(path.unlink)
