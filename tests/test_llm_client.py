@@ -256,6 +256,102 @@ class TestStreamGenerate:
         assert stream.close_count == 1
 
 
+# ---------- stream_chat()（终答逐字流式 + 工具调用分片累积） ----------
+
+class FakeRawFunctionDelta:
+    def __init__(self, name=None, arguments=None):
+        self.name = name
+        self.arguments = arguments
+
+
+class FakeRawToolCallDelta:
+    def __init__(self, index, call_id=None, name=None, arguments=None):
+        self.index = index
+        self.id = call_id
+        self.function = FakeRawFunctionDelta(name, arguments)
+
+
+class FakeDeltaWithTools:
+    def __init__(self, content=None, tool_calls=None):
+        self.content = content
+        self.tool_calls = tool_calls
+
+
+class FakeChunkWithTools:
+    def __init__(self, content=None, tool_calls=None):
+        self.choices = [SimpleNamespace(
+            delta=FakeDeltaWithTools(content, tool_calls)
+        )]
+
+
+class TestStreamChat:
+    def test_content_only_stream_flushes_after_threshold(self):
+        client, completions = _client([FakeStream([
+            FakeChunkWithTools("a"), FakeChunkWithTools("b"),
+            FakeChunkWithTools("c"), FakeChunkWithTools("d"),
+        ])])
+        deltas = []
+
+        turn = client.stream_chat(
+            _QMSG, on_delta=deltas.append, flush_after=3
+        )
+
+        assert deltas == ["abc", "d"]
+        assert turn.content == "abcd"
+        assert turn.tool_calls == []
+        assert completions.calls[0]["stream"] is True
+
+    def test_short_answer_is_emitted_once_at_end(self):
+        client, _ = _client([FakeStream([FakeChunkWithTools("短"), FakeChunkWithTools("答")])])
+        deltas = []
+
+        turn = client.stream_chat(_QMSG, on_delta=deltas.append, flush_after=100)
+
+        assert deltas == ["短答"]
+        assert turn.content == "短答"
+
+    def test_tool_round_discards_intermediate_content_and_accumulates_arguments(self):
+        client, _ = _client([FakeStream([
+            FakeChunkWithTools("我先检索一下。"),
+            FakeChunkWithTools(tool_calls=[FakeRawToolCallDelta(
+                0, "call_1", "search_docs", '{"query": "启动"'
+            )]),
+            FakeChunkWithTools(tool_calls=[FakeRawToolCallDelta(
+                0, arguments=', "top_k": 3}'
+            )]),
+        ])])
+        deltas = []
+
+        turn = client.stream_chat(
+            _QMSG, tools=[{"t": 1}], on_delta=deltas.append, flush_after=100
+        )
+
+        assert deltas == []   # 未达阈值的中间话术在识别出工具轮后丢弃
+        assert turn.content == "我先检索一下。"
+        assert len(turn.tool_calls) == 1
+        call = turn.tool_calls[0]
+        assert call.id == "call_1" and call.name == "search_docs"
+        assert call.arguments == {"query": "启动", "top_k": 3}
+
+    def test_invalid_streamed_arguments_raise_parse_error(self):
+        client, _ = _client([FakeStream([
+            FakeChunkWithTools(tool_calls=[FakeRawToolCallDelta(
+                0, "c1", "search_docs", "不是JSON"
+            )]),
+        ])])
+
+        with pytest.raises(ToolArgumentsParseError):
+            client.stream_chat(_QMSG, tools=[{"t": 1}])
+
+    def test_stream_is_closed_on_exhaustion(self):
+        stream = FakeStream([FakeChunkWithTools("ok")])
+        client, _ = _client([stream])
+
+        client.stream_chat(_QMSG, on_delta=lambda text: None)
+
+        assert stream.close_count == 1
+
+
 # ---------- 429 退避重试 / 认证错误不重试（F9 Day 13） ----------
 
 def _rate_limit_error():

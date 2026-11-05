@@ -48,6 +48,22 @@ class TestChatRequest:
         req = ChatRequest(query="问题", allow_general=True)
         assert req.allow_general is True
 
+    def test_model_defaults_to_none(self):
+        assert ChatRequest(query="问题").model is None
+
+    def test_model_accepts_allowlisted_name(self):
+        req = ChatRequest(query="问题", model="agnes-2.5-flash")
+        assert req.model == "agnes-2.5-flash"
+
+    def test_model_rejects_name_outside_allowlist(self):
+        # 只允许服务端白名单内的模型，防止前端传入任意模型名（乃至想注入请求地址）
+        with pytest.raises(ValidationError):
+            ChatRequest(query="问题", model="gpt-4o-mini")
+
+    def test_model_rejects_oversized_name(self):
+        with pytest.raises(ValidationError):
+            ChatRequest(query="问题", model="x" * 65)
+
 
 class TestSourceOut:
     def test_page_optional(self):

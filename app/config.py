@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     AGNES_API_KEY: str = ""
     AGNES_BASE_URL: str = "https://apihub.agnes-ai.com/v1"
     CHAT_MODEL: str = "agnes-2.5-flash"
+    # 前端可切换的聊天模型白名单（逗号分隔）。只允许这里的名字，避免前端传任意模型；
+    # 只切 chat 模型，embedding/rerank 不动（换嵌入模型会导致索引维度不兼容）
+    CHAT_MODEL_OPTIONS: str = "agnes-2.5-flash"
     LLM_TIMEOUT: float = 30.0                # 单次请求超时（秒）
     LLM_TEMPERATURE: float = 0.3             # RAG 求稳，低发散
     LLM_MAX_TOKENS: int = 1024               # 含 reasoning_content 余量
@@ -56,6 +59,11 @@ class Settings(BaseSettings):
     # fail-open 降级（scored=False）时此门不生效，供应商故障不造成误拒。
     RERANK_THRESHOLD: float = 0.02
 
+    # ===== 视觉转写：图片 / 扫描件 OCR（硅基流动） =====
+    VISION_MODEL: str = "Qwen/Qwen3-VL-8B-Instruct"
+    VISION_TIMEOUT: float = 180.0             # 单页转写超时（秒），视觉模型首包较慢
+    VISION_MAX_PAGES: int = 10                # 扫描件最多 OCR 页数，控制上传耗时与成本
+
     # ===== 服务配置 =====
     HOST: str = "0.0.0.0"
     PORT: int = 8000
@@ -67,6 +75,8 @@ class Settings(BaseSettings):
     # ===== 向量数据库 =====
     COLLECTION_NAME: str = "devdocs"
     CHROMA_DATA_DIR: Path = APP_HOME / "data" / "chroma"
+    # 前端「自定义模型」持久化文件；与 chroma 同目录，删 data 即重置
+    MODELS_STORE: Path = APP_HOME / "data" / "models.json"
 
     # ===== 文档配置 =====
     CHUNK_SIZE: int = 500                     # 每个文本块大小（字符数）
@@ -90,11 +100,21 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def anchor_relative_paths(self) -> "Settings":
         """.env 里若写了相对路径，统一锚定到应用主目录，避免依赖启动时的工作目录"""
-        for name in ("CHROMA_DATA_DIR", "UPLOAD_DIR"):
+        for name in ("CHROMA_DATA_DIR", "UPLOAD_DIR", "MODELS_STORE"):
             path = getattr(self, name)
             if not path.is_absolute():
                 setattr(self, name, (APP_HOME / path).resolve())
         return self
+
+    @property
+    def chat_model_options(self) -> list[str]:
+        """去重后的可切换模型列表；默认模型始终在列表里"""
+        names = list(dict.fromkeys(
+            m.strip() for m in self.CHAT_MODEL_OPTIONS.split(",") if m.strip()
+        ))
+        if self.CHAT_MODEL not in names:
+            names.insert(0, self.CHAT_MODEL)
+        return names
 
 
 # 全局单例，整个项目统一从这里取配置

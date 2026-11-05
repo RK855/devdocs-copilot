@@ -21,7 +21,7 @@ from app.services.evidence_service import (
     gather_evidence,
 )
 from app.services.llm_client import (
-    AgnesChatClient,
+    create_chat_client,
     AUTH_ERROR_MESSAGE,
     LLM_UNAVAILABLE_MESSAGE,
     ToolArgumentsParseError,
@@ -104,8 +104,24 @@ class _EmptyGeneralAnswerError(Exception):
     """通用知识兜底返回空正文：视同生成失败，不得冒充成功态"""
 
 
+def _consume_stream(chat_llm: Any, messages: list[dict], on_delta) -> str:
+    """在工作线程里消费同步流式生成器，逐块回调同步 on_delta"""
+    parts: list[str] = []
+    for piece in chat_llm.stream_generate(messages):
+        parts.append(piece)
+        on_delta(piece)
+    return "".join(parts)
+
+
+async def _generate_text(chat_llm: Any, messages: list[dict], on_delta) -> str:
+    """有 on_delta 且客户端支持流式时逐字产出，否则退回一次性 generate"""
+    if on_delta is not None and hasattr(chat_llm, "stream_generate"):
+        return await asyncio.to_thread(_consume_stream, chat_llm, messages, on_delta)
+    return await asyncio.to_thread(chat_llm.generate, messages)
+
+
 async def _generate_general_answer(
-    chat_llm: Any, query: str
+    chat_llm: Any, query: str, on_delta=None
 ) -> tuple[str, Exception | None]:
     """库内确无内容后的通用知识单次生成（独立 messages，不继承 ReAct 历史）。
 
@@ -117,7 +133,7 @@ async def _generate_general_answer(
         {"role": "user", "content": query},
     ]
     try:
-        content = await asyncio.to_thread(chat_llm.generate, messages)
+        content = await _generate_text(chat_llm, messages, on_delta)
     except Exception as exc:
         return "", exc
     content = (content or "").strip()
@@ -377,6 +393,8 @@ async def run_agent(
     allow_general: bool = False,
     registry: ToolRegistry | None = None,
     on_event: ProgressCallback | None = None,
+    on_delta: Callable[[str], None] | None = None,
+    model: str | None = None,
 ) -> AgentChatResponse:
     """ReAct 主循环：LLM 决定调用工具 → 执行回喂 → 再决策，直至给最终答案或触顶。
 
@@ -386,12 +404,14 @@ async def run_agent(
     on_event：可选异步回调，按序推送 round_start（每轮模型思考前）/
         tool_start（工具执行或缓存重放前，含参数与 cached）/
         tool_end（完整 AgentStep）/ phase=answering（终答/通用知识生成前）。
+    on_delta：可选同步回调，最终答案生成时逐字回调（可能运行在工作线程）；
+        传入后优先走 stream_chat / stream_generate，未传时行为与旧版完全一致。
     """
     started = time.perf_counter()
     try:
         # 与 chat/stream 链路同一纪律：真实客户端构造失败（缺/错 API Key 等）
         # 收敛为业务错误态而不是裸 500；llm 注入时原样透传
-        chat_llm = llm or AgnesChatClient()
+        chat_llm = create_chat_client(llm, model=model)
     except Exception:
         return AgentChatResponse(
             answer=AUTH_ERROR_MESSAGE,
@@ -427,9 +447,17 @@ async def run_agent(
     for round_no in range(1, settings.AGENT_MAX_STEPS + 1):
         await _emit({"type": "round_start", "round": round_no})
         try:
-            turn = await asyncio.to_thread(
-                chat_llm.chat, messages, tools=registry.openai_schema()
-            )
+            if on_delta is not None and hasattr(chat_llm, "stream_chat"):
+                turn = await asyncio.to_thread(
+                    chat_llm.stream_chat,
+                    messages,
+                    tools=registry.openai_schema(),
+                    on_delta=on_delta,
+                )
+            else:
+                turn = await asyncio.to_thread(
+                    chat_llm.chat, messages, tools=registry.openai_schema()
+                )
         except ToolArgumentsParseError as exc:
             # 整轮参数 JSON 非法、无法配对 tool 消息：以 user 身份回喂，让模型重发
             messages.append({
@@ -540,7 +568,7 @@ async def run_agent(
             messages.append({"role": "user", "content": MAX_STEPS_HINT})
             await _emit({"type": "phase", "phase": "answering"})
             try:
-                final_content = await asyncio.to_thread(chat_llm.generate, messages)
+                final_content = await _generate_text(chat_llm, messages, on_delta)
             except Exception as exc:
                 fatal = exc
 
@@ -590,7 +618,9 @@ async def run_agent(
 
         # Day 14：显式 per-query 授权 + 库内已完整检索仍零证据 → 通用知识兜底
         await _emit({"type": "phase", "phase": "answering"})
-        general_text, general_exc = await _generate_general_answer(chat_llm, query)
+        general_text, general_exc = await _generate_general_answer(
+            chat_llm, query, on_delta
+        )
         if general_exc is not None:
             terminal_message = (
                 AUTH_ERROR_MESSAGE
@@ -619,8 +649,8 @@ async def run_agent(
         )
         await _emit({"type": "phase", "phase": "answering"})
         try:
-            final_content = await asyncio.to_thread(
-                chat_llm.generate, fallback_messages
+            final_content = await _generate_text(
+                chat_llm, fallback_messages, on_delta
             )
         except Exception:
             return AgentChatResponse(

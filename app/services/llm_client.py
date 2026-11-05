@@ -16,6 +16,7 @@ import openai
 from openai import OpenAI
 
 from app.config import settings
+from app.services import model_registry
 
 # 值得重试的"临时性故障"
 RETRYABLE_ERRORS = (
@@ -44,13 +45,19 @@ def is_config_error(exc: BaseException) -> bool:
     return isinstance(exc, (LLMConfigError,) + AUTH_ERRORS)
 
 
-def create_chat_client(llm=None) -> "AgnesChatClient":
+def create_chat_client(llm=None, *, model: str | None = None) -> "AgnesChatClient":
     """构造注入入口：注入了 llm 直接用；否则构造真实客户端，失败统一转 LLMConfigError。
+    model 只影响真实客户端；注入替身时忽略（测试不关心模型名）。
     启动期不构造（settings 已允许空 key），故应用启动永不被 key 问题阻塞。"""
     if llm is not None:
         return llm
     try:
-        return AgnesChatClient()
+        provider = model_registry.resolve(model)
+        return AgnesChatClient(
+            api_key=provider["api_key"],
+            base_url=provider["base_url"],
+            model=provider["model"],
+        )
     except Exception as exc:
         if isinstance(exc, LLMConfigError):
             raise
@@ -143,6 +150,80 @@ class AgnesChatClient:
                                       arguments=arguments))
 
         return ChatTurn(content=message.content or "", tool_calls=tool_calls)
+
+    def stream_chat(self, messages: list[dict], *, tools: list[dict] | None = None,
+                    on_delta=None, flush_after: int = 120) -> ChatTurn:
+        """流式版 chat：边收正文边回调 on_delta（同步回调，可能运行在工作线程），
+        同时累积流式 tool_call 分片，结束后返回完整 ChatTurn。
+
+        on_delta 的缓冲策略：先攒 flush_after 个字符再开始实时吐字。工具调用通常紧跟
+        在开头几个 chunk 出现，短中间话术（"我先查一下"）会在达到阈值前被识别并丢弃；
+        超过阈值的正文视为终答，边到边推。阈值调大更保守，但首个字上屏更晚。
+        工具调用的 arguments 是跨 chunk 分片下发的，必须按 index 累积后一次性解析。
+        """
+        stream = self._create(messages, tools=tools, stream=True)
+        content_parts: list[str] = []
+        buffered: list[str] = []
+        flushed = False
+        saw_tool_call = False
+        calls: dict[int, dict] = {}
+
+        def _emit(text: str) -> None:
+            if on_delta is not None:
+                on_delta(text)
+
+        try:
+            for chunk in stream:
+                delta = chunk.choices[0].delta
+                text = delta.content or ""
+                if text:
+                    content_parts.append(text)
+                    if on_delta is not None and not saw_tool_call:
+                        if flushed:
+                            _emit(text)
+                        else:
+                            buffered.append(text)
+                            if sum(len(part) for part in buffered) >= flush_after:
+                                _emit("".join(buffered))
+                                buffered.clear()
+                                flushed = True
+
+                for raw in getattr(delta, "tool_calls", None) or []:
+                    saw_tool_call = True
+                    index = getattr(raw, "index", 0) or 0
+                    entry = calls.setdefault(
+                        index, {"id": "", "name": "", "arguments": ""}
+                    )
+                    if getattr(raw, "id", None):
+                        entry["id"] = raw.id
+                    function = getattr(raw, "function", None)
+                    if function is not None:
+                        if getattr(function, "name", None):
+                            entry["name"] = function.name
+                        if getattr(function, "arguments", None):
+                            entry["arguments"] += function.arguments
+        finally:
+            stream.close()
+
+        # 工具轮：缓冲的中间话术直接丢弃，不污染最终答案
+        if buffered and not saw_tool_call:
+            _emit("".join(buffered))
+
+        tool_calls: list[ToolCall] = []
+        for index in sorted(calls):
+            entry = calls[index]
+            raw_args = entry["arguments"] or "{}"
+            try:
+                arguments = json.loads(raw_args)
+            except json.JSONDecodeError as exc:
+                raise ToolArgumentsParseError(
+                    f"工具 {entry['name']} 的参数不是合法 JSON: {raw_args!r}"
+                ) from exc
+            tool_calls.append(ToolCall(
+                id=entry["id"], name=entry["name"], arguments=arguments,
+            ))
+
+        return ChatTurn(content="".join(content_parts), tool_calls=tool_calls)
 
     def stream_generate(self, messages: list[dict]):
         """流式正文生成器：逐块 yield delta.content（reasoning_content 丢弃，空块跳过）。

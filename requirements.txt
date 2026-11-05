@@ -16,6 +16,7 @@ chromadb==1.5.9
 
 # 文档解析
 pypdf==6.19.0
+pymupdf==2.1
 python-docx==1.2.0
 
 # 配置与数据校验

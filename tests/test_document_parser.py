@@ -63,7 +63,26 @@ class TestParsePdfDocument:
         assert "Hello FastAPI" in text
         assert page == 1
 
-    def test_blank_page_is_skipped(self):
+    def test_text_blocks_are_sorted_by_position_not_stream_order(self):
+        # 回归：PDF 内容流顺序与视觉顺序不一致（多栏简历/翻译层叠加），
+        # 必须按坐标排序，否则正文会出现半句开头、章节前后颠倒
+        import pymupdf
+
+        doc = pymupdf.open()
+        page = doc.new_page(width=400, height=400)
+        page.insert_text((50, 320), "BOTTOM-PART")
+        page.insert_text((50, 80), "TOP-PART")
+        data = doc.tobytes()
+
+        text, _ = parse_document(data, "layout.pdf")[0]
+
+        assert text.index("TOP-PART") < text.index("BOTTOM-PART")
+
+    def test_blank_page_is_skipped(self, monkeypatch):
+        # 空白页也会触发 OCR 兜底；识别为空时应跳过而不是入库空块
+        monkeypatch.setattr(
+            "app.services.document_parser.transcribe_image", lambda image, mime: "  "
+        )
         writer = PdfWriter()
         writer.add_blank_page(width=400, height=400)
         buf = BytesIO()
@@ -83,6 +102,52 @@ class TestParsePdfDocument:
 
         assert [page for _, page in units] == [1, 2]
         assert "Page One" in units[0][0] and "Page Two" in units[1][0]
+
+    def test_scanned_page_falls_back_to_vision_ocr(self, monkeypatch):
+        # 扫描件没有文本层；必须走视觉模型逐字转写，而不是直接判"解析为空"
+        import pymupdf
+
+        doc = pymupdf.open()
+        doc.new_page(width=400, height=400)
+        data = doc.tobytes()
+        monkeypatch.setattr(
+            "app.services.document_parser.transcribe_image",
+            lambda image, mime: "OCR-TEXT 电话 15007829582",
+        )
+
+        units = parse_document(data, "scanned.pdf")
+
+        assert len(units) == 1
+        assert "OCR-TEXT" in units[0][0]
+        assert units[0][1] == 1
+
+    def test_text_pdf_does_not_call_vision(self, monkeypatch):
+        def boom(*_args, **_kwargs):
+            raise AssertionError("有文本层时不应调用视觉模型")
+
+        monkeypatch.setattr("app.services.document_parser.transcribe_image", boom)
+
+        units = parse_document(make_pdf("Hello FastAPI"), "paper.pdf")
+
+        assert "Hello FastAPI" in units[0][0]
+
+
+class TestParseImageDocument:
+    def test_png_is_transcribed_by_vision(self, monkeypatch):
+        monkeypatch.setattr(
+            "app.services.document_parser.transcribe_image",
+            lambda image, mime: "图中文字：部署步骤 1. 安装依赖",
+        )
+
+        units = parse_document(b"fake-png-bytes", "screenshot.png")
+
+        assert len(units) == 1
+        assert "部署步骤" in units[0][0]
+        assert units[0][1] is None
+
+    def test_unsupported_image_suffix_is_rejected(self):
+        with pytest.raises(ValueError):
+            parse_document(b"fake", "photo.bmp")
 
 
 def make_docx(paragraphs: list[str], table: list[list[str]] | None = None) -> bytes:

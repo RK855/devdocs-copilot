@@ -112,6 +112,23 @@ button:focus-visible, a:focus-visible, textarea:focus-visible,
 }
 .mode-btn:hover { color: var(--text); }
 .mode-btn.active { background: var(--accent-soft); color: var(--accent); }
+/* 聊天模型下拉：窄屏隐藏，避免挤压品牌与模式切换 */
+.model-select {
+  font-family: var(--font-mono); font-size: 12px; color: var(--text-dim);
+  background: var(--bg-elev); border: var(--hairline); border-radius: 6px;
+  padding: 6px 8px; max-width: 180px; cursor: pointer;
+}
+.model-select:hover { color: var(--text); }
+/* 「切换向量模型」按钮：与下拉同色系，点击后下拉只读展示当前向量模型 */
+.model-mode {
+  font-family: var(--font-mono); font-size: 12px; color: var(--text-dim);
+  background: var(--bg-elev); border: var(--hairline); border-radius: 6px;
+  padding: 6px 10px; cursor: pointer; white-space: nowrap;
+  transition: color .2s var(--ease), border-color .2s var(--ease), background .2s var(--ease);
+}
+.model-mode:hover { color: var(--accent); border-color: var(--accent); }
+.model-mode.active { color: var(--accent); background: var(--accent-soft); border-color: var(--accent); }
+@media (max-width: 720px) { .model-select, .model-mode { display: none; } }
 
 /* ============ 主工作区 ============ */
 .workspace { display: flex; height: calc(100% - var(--topbar-h)); }
@@ -514,7 +531,7 @@ html[data-theme="light"] .general-tag {
 .picker-count { margin-left: auto; font-family: var(--font-mono); font-size: 12px; color: var(--text-faint); }
 
 /* ---- Toast ---- */
-.toast-stack { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.toast-stack { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 140; display: flex; flex-direction: column; gap: 8px; align-items: center; }
 .toast {
   background: var(--bg-elev); border: var(--hairline); border-left: 3px solid var(--accent);
   color: var(--text); border-radius: 8px; padding: 10px 18px; font-size: 13px;
@@ -550,6 +567,64 @@ html[data-theme="light"] .general-tag {
 .modal-btn.danger:hover { filter: brightness(1.08); }
 @keyframes modal-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes modal-rise { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+
+/* ============ 自定义模型弹窗 ============ */
+.model-modal { max-width: 520px; max-height: calc(100vh - 40px); overflow-y: auto; }
+.model-modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.model-modal-head .modal-title { margin: 0; font-size: 17px; }
+.model-close {
+  border: 0; background: none; color: var(--text-dim); font-size: 22px;
+  line-height: 1; cursor: pointer; padding: 2px 6px; border-radius: 6px;
+}
+.model-close:hover { color: var(--text); background: var(--bg-soft); }
+.field-label {
+  display: block; font-size: 13px; color: var(--text); margin: 14px 0 6px; font-weight: 500;
+}
+.field-label.required::before { content: "*"; color: var(--danger); margin-right: 4px; }
+.field-label-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.field-label-row .field-label { margin-bottom: 6px; }
+.field-hint { font-size: 12px; line-height: 1.6; color: var(--text-faint); margin: 0 0 8px; }
+.cm-input {
+  width: 100%; background: var(--bg); color: var(--text); border: var(--hairline);
+  border-radius: 8px; padding: 9px 12px; font-size: 13px; font-family: inherit;
+}
+.cm-input:focus { outline: none; border-color: var(--accent); }
+.cm-input::placeholder { color: var(--text-faint); }
+.counter-wrap { position: relative; }
+.counter-wrap .cm-input { padding-right: 52px; }
+.counter-wrap span {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  font-size: 12px; color: var(--text-faint); pointer-events: none;
+}
+.key-wrap { position: relative; }
+.key-wrap .cm-input { padding-right: 58px; }
+.key-wrap button {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  border: 0; background: none; color: var(--text-dim); font-size: 12px; cursor: pointer;
+}
+.key-wrap button:hover { color: var(--text); }
+.switch { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-dim); cursor: pointer; user-select: none; }
+.switch input { position: absolute; opacity: 0; pointer-events: none; }
+.switch .track {
+  width: 34px; height: 18px; border-radius: 999px; background: var(--border);
+  position: relative; transition: background .18s var(--ease); flex: none;
+}
+.switch .track::after {
+  content: ""; position: absolute; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--text); top: 2px; left: 2px; transition: transform .18s var(--ease);
+}
+.switch input:checked + .track { background: var(--accent); }
+.switch input:checked + .track::after { transform: translateX(16px); }
+.cm-adv { margin-top: 16px; border-top: var(--hairline); padding-top: 10px; }
+.cm-adv summary { font-size: 13px; color: var(--text-dim); cursor: pointer; }
+.cm-adv[open] summary { color: var(--text); }
+.cm-error { font-size: 12px; line-height: 1.55; color: var(--danger); margin: 10px 0 0; min-height: 0; }
+.cm-error.ok { color: var(--ok); font-weight: 600; }
+.cm-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; margin-top: 16px; }
+.cm-foot-hint { margin: 0; flex: 1; font-size: 12px; color: var(--text-faint); line-height: 1.5; }
+.modal-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.modal-btn.primary:hover { filter: brightness(1.08); }
+.modal-btn:disabled { opacity: .55; cursor: not-allowed; }
 
 .scrim { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 20; }
 
@@ -604,6 +679,8 @@ html[data-theme="light"] .general-tag {
     <button type="button" class="mode-btn" data-mode="agent" aria-pressed="false">AGENT</button>
   </div>
   <div class="topbar-spacer"></div>
+  <button class="model-mode" id="model-mode" type="button" title="查看当前向量模型" style="display:none">切换向量模型</button>
+  <select class="model-select" id="model-select" aria-label="聊天模型" title="切换聊天模型（不影响检索与精排）" style="display:none"></select>
   <button class="icon-btn" id="theme-btn" aria-label="切换深浅主题" title="切换主题">◐</button>
 </header>
 
@@ -614,9 +691,9 @@ html[data-theme="light"] .general-tag {
 
     <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="上传文档，支持多选">
       <div class="dropzone-title">拖拽文档到此处</div>
-      <div class="dropzone-hint">或点击选择，可多选 · .md / .txt / .pdf / .docx ≤ 10MB</div>
+      <div class="dropzone-hint">或点击选择，可多选 · .md / .txt / .pdf / .docx / png/jpg ≤ 10MB（图片与扫描件走视觉转写）</div>
     </div>
-    <input type="file" id="file-input" accept=".md,.txt,.pdf,.docx" multiple hidden>
+    <input type="file" id="file-input" accept=".md,.txt,.pdf,.docx,.png,.jpg,.jpeg,.webp" multiple hidden>
 
     <div class="source-switch" role="group" aria-label="按语料视图切换">
       <button type="button" class="source-btn active" data-source="library" aria-pressed="true">语料库 <span class="source-count" id="count-library">0</span></button>
@@ -685,6 +762,69 @@ html[data-theme="light"] .general-tag {
     <div class="modal-actions">
       <button class="modal-btn" id="confirm-cancel" type="button">取消</button>
       <button class="modal-btn" id="confirm-ok" type="button">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 自定义模型：添加后需先通过一次真实连通性测试 -->
+<div class="modal-mask" id="model-mask" role="dialog" aria-modal="true" aria-labelledby="model-modal-title">
+  <div class="modal-card model-modal">
+    <div class="model-modal-head">
+      <h3 class="modal-title" id="model-modal-title">自定义模型</h3>
+      <button class="model-close" id="model-close" type="button" aria-label="关闭">×</button>
+    </div>
+
+    <label class="field-label required" for="cm-preset">预设模型</label>
+    <select class="cm-input" id="cm-preset">
+      <option value="custom">自定义模型</option>
+    </select>
+    <p class="field-hint" id="cm-preset-hint">选择预设会自动填好地址与模型 ID，只需填写下方 API 密钥。</p>
+
+    <label class="field-label required" for="cm-format">API 格式</label>
+    <select class="cm-input" id="cm-format">
+      <option value="openai">OpenAI Chat Completions 格式</option>
+    </select>
+
+    <div class="field-label-row">
+      <label class="field-label required" for="cm-url">自定义请求地址</label>
+      <label class="switch" title="勾选后按完整端点使用，不再自动补 /chat/completions">
+        <span>完整 URL</span>
+        <input type="checkbox" id="cm-full">
+        <span class="track"></span>
+      </label>
+    </div>
+    <p class="field-hint">请填写兼容 OpenAI API 的服务端点地址，不要以斜杠结尾。/chat/completions 将会被补充到你填写的地址末尾。</p>
+    <input class="cm-input" id="cm-url" placeholder="例如 https://api.openai.com/v1" autocomplete="off">
+
+    <label class="field-label required" for="cm-model">模型 ID</label>
+    <input class="cm-input" id="cm-model" placeholder="输入模型 ID" autocomplete="off">
+
+    <label class="field-label" for="cm-name">模型展示名称</label>
+    <p class="field-hint">在模型列表中展示的名称，未设置时默认显示 Model ID。</p>
+    <div class="counter-wrap">
+      <input class="cm-input" id="cm-name" maxlength="64" placeholder="请输入模型展示名称" autocomplete="off">
+      <span id="cm-name-count">0/64</span>
+    </div>
+
+    <label class="field-label required" for="cm-key">API 密钥</label>
+    <div class="key-wrap">
+      <input class="cm-input" id="cm-key" type="password" placeholder="请输入 API Key" autocomplete="off">
+      <button id="cm-eye" type="button">显示</button>
+    </div>
+
+    <details class="cm-adv">
+      <summary>高级设置</summary>
+      <p class="field-hint">当前版本使用服务端默认超时与生成参数，暂不支持按模型覆盖。</p>
+    </details>
+
+    <p class="cm-error" id="cm-error"></p>
+    <div class="cm-foot">
+      <p class="field-hint cm-foot-hint">连通性测试会发起一次真实请求，会消耗少量模型 Token</p>
+      <div class="modal-actions">
+        <button class="modal-btn" id="cm-test" type="button">测试连接</button>
+        <button class="modal-btn" id="cm-reset" type="button">重置</button>
+        <button class="modal-btn primary" id="cm-add" type="button">添加模型</button>
+      </div>
     </div>
   </div>
 </div>
@@ -803,6 +943,305 @@ function applyMode(mode) {
 document.querySelectorAll(".mode-btn").forEach((b) =>
   b.addEventListener("click", () => applyMode(b.dataset.mode)));
 applyMode(qaMode);
+
+/* ================= 聊天模型切换（只切聊天，embedding/rerank 不变） ================= */
+let chatModel = localStorage.getItem("devdocs-model") || "";
+let defaultModel = "";
+let modelCache = [];
+let modelPresets = [];        // 后端下发的免费模型预设（预填地址/模型 ID）
+let embeddingReady = true;    // 向量检索是否已配置（硅基流动 Key）
+let embeddingInfo = null;     // 当前向量/精排/视觉模型（后端只读下发）
+let modelView = "chat";       // chat=可切换聊天模型 / vector=只读查看向量模型
+let setupPrompted = false;    // 首次使用弹窗只自动弹一次
+const modelSelect = $("model-select");
+const modelModeBtn = $("model-mode");
+const ADD_MODEL_OPTION = "__add_model__";
+
+function fillPresetOptions() {
+  const select = $("cm-preset");
+  select.innerHTML = "";
+  for (const preset of modelPresets) {
+    const opt = document.createElement("option");
+    opt.value = preset.key;
+    opt.textContent = preset.label;
+    select.appendChild(opt);
+  }
+  const custom = document.createElement("option");
+  custom.value = "custom";
+  custom.textContent = "自定义模型";
+  select.appendChild(custom);
+}
+
+/* 选预设即自动填地址/模型 ID/展示名；选自定义则清空，交给用户自己填 */
+function applyPreset(key) {
+  const preset = modelPresets.find((p) => p.key === key);
+  if (!preset) {
+    $("cm-url").value = "";
+    $("cm-model").value = "";
+    $("cm-name").value = "";
+  } else {
+    $("cm-url").value = preset.base_url;
+    $("cm-model").value = preset.model_id;
+    $("cm-name").value = preset.display_name || "";
+  }
+  $("cm-full").checked = false;
+  $("cm-name-count").textContent = `${$("cm-name").value.length}/64`;
+  setModelMessage("");
+}
+
+function fillModelOptions(models, selected) {
+  modelSelect.innerHTML = "";
+  for (const item of models) {
+    const opt = document.createElement("option");
+    opt.value = item.id;
+    opt.textContent = item.name;
+    modelSelect.appendChild(opt);
+  }
+  const addOpt = document.createElement("option");
+  addOpt.value = ADD_MODEL_OPTION;
+  addOpt.textContent = "＋ 添加自定义模型";
+  modelSelect.appendChild(addOpt);
+
+  const known = new Set(models.map((m) => m.id));
+  modelSelect.value = known.has(selected) ? selected : defaultModel;
+  chatModel = modelSelect.value;
+}
+
+/* 顶栏下拉两种视图：聊天模型可切换；向量模型只读展示（换嵌入模型需整库重嵌） */
+function renderChatModelView() {
+  modelView = "chat";
+  fillModelOptions(modelCache, chatModel);
+  modelSelect.disabled = false;
+  modelSelect.setAttribute("aria-label", "聊天模型");
+  modelSelect.title = "切换聊天模型（不影响检索与精排）";
+  modelModeBtn.textContent = "切换向量模型";
+  modelModeBtn.title = "查看当前向量模型";
+  modelModeBtn.classList.remove("active");
+}
+
+function renderVectorModelView() {
+  modelView = "vector";
+  const info = embeddingInfo;
+  modelSelect.innerHTML = "";
+  const opt = document.createElement("option");
+  opt.value = "vector-model";
+  opt.textContent = info
+    ? `${info.model} · ${info.dim} 维（向量模型）`
+    : "向量模型信息未获取";
+  modelSelect.appendChild(opt);
+  modelSelect.disabled = true;
+  modelSelect.setAttribute("aria-label", "当前向量模型（只读）");
+  modelSelect.title = info
+    ? `当前向量模型：${info.model}（${info.dim} 维 / ${info.provider}）\n精排：${info.rerank}\n视觉：${info.vision}`
+    : "当前向量模型";
+  modelModeBtn.textContent = "切回聊天模型";
+  modelModeBtn.title = "切回聊天模型";
+  modelModeBtn.classList.add("active");
+}
+
+modelModeBtn.addEventListener("click", () => {
+  if (modelView === "chat") renderVectorModelView();
+  else renderChatModelView();
+});
+
+async function loadModels(preferred) {
+  try {
+    const r = await fetch("/api/models");
+    if (!r.ok) throw new Error(r.status);
+    const data = await r.json();
+    defaultModel = data.default;
+    modelCache = data.models || [];
+    modelPresets = data.presets || [];
+    embeddingReady = data.embedding_ready !== false;
+    embeddingInfo = data.embedding || null;
+    fillPresetOptions();
+    if (modelView === "vector") renderVectorModelView();
+    else fillModelOptions(modelCache, preferred != null ? preferred : chatModel);
+    modelSelect.style.display = "";
+    modelModeBtn.style.display = "";
+    // 首次使用：宿主还没配置任何模型 → 自动弹引导弹窗（配好后后端 needs_setup=false，不再弹）
+    if (data.needs_setup && !setupPrompted) {
+      setupPrompted = true;
+      openModelModal({ firstRun: true });
+    }
+  } catch {
+    modelSelect.style.display = "none";   // 拉不到清单就不显示，避免空下拉误导
+    modelModeBtn.style.display = "none";
+  }
+}
+
+modelSelect.addEventListener("change", () => {
+  if (modelView === "vector") return;     // 只读视图不接受切换
+  if (modelSelect.value === ADD_MODEL_OPTION) {
+    modelSelect.value = chatModel;        // 下拉本身不承载“添加”状态
+    openModelModal();
+    return;
+  }
+  chatModel = modelSelect.value;
+  localStorage.setItem("devdocs-model", chatModel);
+});
+
+/* ---------- 自定义模型弹窗 ---------- */
+const modelMask = $("model-mask");
+
+function resetModelForm() {
+  $("cm-format").value = "openai";
+  $("cm-preset").value = "custom";
+  $("cm-url").value = "";
+  $("cm-full").checked = false;
+  $("cm-model").value = "";
+  $("cm-name").value = "";
+  $("cm-key").value = "";
+  $("cm-key").type = "password";
+  $("cm-eye").textContent = "显示";
+  $("cm-name-count").textContent = "0/64";
+  setModelMessage("");
+  $("cm-add").disabled = false;
+  $("cm-add").textContent = "添加模型";
+  $("cm-test").disabled = false;
+  $("cm-test").textContent = "测试连接";
+}
+
+/* firstRun=true：首次使用引导形态，不允许关闭，且默认选中第一个免费预设 */
+function openModelModal({ firstRun = false } = {}) {
+  resetModelForm();
+  modelMask.dataset.mode = firstRun ? "setup" : "add";
+  $("model-modal-title").textContent = firstRun ? "首次使用 · 配置模型" : "自定义模型";
+  $("model-close").style.display = firstRun ? "none" : "";
+  if (firstRun && modelPresets.length) {
+    $("cm-preset").value = modelPresets[0].key;
+    applyPreset(modelPresets[0].key);
+  }
+  if (firstRun) $("cm-add").textContent = "保存并开始使用";
+  modelMask.classList.add("show");
+  setTimeout(() => $("cm-key").focus(), 30);
+}
+
+function closeModelModal() {
+  modelMask.classList.remove("show");
+}
+
+/* 关闭通道：首次配置时锁死，避免用户关掉后无模型可用 */
+function canCloseModelModal() {
+  return modelMask.dataset.mode !== "setup";
+}
+
+function modelDetail(data, fallback) {
+  if (typeof data.detail === "string") return data.detail;
+  if (Array.isArray(data.detail) && data.detail.length) {
+    return data.detail[0].msg || fallback;
+  }
+  return fallback;
+}
+
+$("cm-name").addEventListener("input", () => {
+  $("cm-name-count").textContent = `${$("cm-name").value.length}/64`;
+});
+$("cm-preset").addEventListener("change", (e) => applyPreset(e.target.value));
+$("cm-eye").addEventListener("click", () => {
+  const input = $("cm-key");
+  const reveal = input.type === "password";
+  input.type = reveal ? "text" : "password";
+  $("cm-eye").textContent = reveal ? "隐藏" : "显示";
+});
+$("cm-reset").addEventListener("click", resetModelForm);
+$("model-close").addEventListener("click", () => { if (canCloseModelModal()) closeModelModal(); });
+modelMask.addEventListener("click", (e) => {
+  if (e.target === modelMask && canCloseModelModal()) closeModelModal();
+});
+
+/* 表单收集 + 本地校验，测试与添加共用同一份 */
+function readModelForm() {
+  const payload = {
+    api_format: $("cm-format").value,
+    base_url: $("cm-url").value.trim(),
+    full_url: $("cm-full").checked,
+    model_id: $("cm-model").value.trim(),
+    display_name: $("cm-name").value.trim(),
+    api_key: $("cm-key").value.trim(),
+  };
+  if (!payload.base_url.startsWith("http://") && !payload.base_url.startsWith("https://")) {
+    throw new Error("请求地址必须以 http:// 或 https:// 开头");
+  }
+  if (!payload.model_id) throw new Error("模型 ID 不能为空");
+  if (!payload.api_key) throw new Error("API 密钥不能为空");
+  return payload;
+}
+
+async function postModelForm(path, payload) {
+  const r = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(modelDetail(data, "连接失败，请检查地址、模型 ID 与密钥"));
+  return data;
+}
+
+/* 弹窗内的提示行：失败红色，成功绿色（toast 会被弹窗遮住的年代已过去，但双通道更稳） */
+function setModelMessage(text, { ok = false } = {}) {
+  const el = $("cm-error");
+  el.textContent = text;
+  el.classList.toggle("ok", ok);
+}
+
+$("cm-test").addEventListener("click", async () => {
+  const btn = $("cm-test");
+  let payload;
+  try {
+    payload = readModelForm();
+  } catch (e) {
+    setModelMessage(e.message);
+    return;
+  }
+  setModelMessage("");
+  btn.disabled = true;
+  btn.textContent = "测试中…";
+  try {
+    const data = await postModelForm("/api/models/test", payload);
+    setModelMessage(`✓ 连接成功 · ${data.latency_ms} ms`, { ok: true });
+    toast(`连接成功：${data.latency_ms} ms`);
+  } catch (e) {
+    setModelMessage(e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "测试连接";
+  }
+});
+
+$("cm-add").addEventListener("click", async () => {
+  let payload;
+  try {
+    payload = readModelForm();
+  } catch (e) {
+    setModelMessage(e.message);
+    return;
+  }
+
+  setModelMessage("");
+  const btn = $("cm-add");
+  btn.disabled = true;
+  btn.textContent = "测试连接并添加中…";
+  try {
+    const data = await postModelForm("/api/models", payload);
+    await loadModels(data.id);
+    localStorage.setItem("devdocs-model", data.id);
+    closeModelModal();
+    toast(`已添加模型：${data.name}`);
+    if (data.seed_started) {
+      toast("已开始后台灌入预置语料，可同时上传自己的文档");
+    } else if (!embeddingReady) {
+      toast("提示：文档上传与检索还需要硅基流动 Key，可再次添加「硅基流动」预设模型");
+    }
+  } catch (e) {
+    setModelMessage(e.message);
+    btn.disabled = false;
+    btn.textContent = modelMask.dataset.mode === "setup" ? "保存并开始使用" : "添加模型";
+  }
+});
+
+loadModels();
 
 /* ================= 移动端抽屉 ================= */
 const sidebar = $("sidebar"), scrim = $("scrim");
@@ -926,13 +1365,16 @@ document.querySelectorAll(".source-btn").forEach((b) =>
   }));
 
 /* ================= Day 13++：检索范围条 ================= */
-const VIEW_SCOPE_LABEL = { library: "语料库", session: "我的上传" };
 
 function viewScopeIds(filter) {
-  return viewDocs(filter).map((d) => d.doc_id);
+  // 语料库视图不传 doc_ids = 全库检索；只有“我的上传”才显式限定到上传集合
+  if (filter === "library") return null;
+  return viewDocs("session").map((d) => d.doc_id);
 }
 
-/* 当前生效范围：custom 空集合=全库返回 null；view 模式跟随当前视图（始终限定） */
+/* 当前生效范围：custom 空集合=全库返回 null；view 模式跟随当前视图。
+   语料库视图返回 null = 全库（含本次上传）——视图只决定列表展示，
+   不能悄悄把刚上传的文档排除在检索范围外（否则 Agent 明明有资料却检索不到）。 */
 function currentScopeIds() {
   if (scopeKind === "custom") return customIds.size ? [...customIds] : null;
   return viewScopeIds(docFilter);
@@ -941,7 +1383,9 @@ function currentScopeIds() {
 /* “限定到空视图”与全库要区分开：空数组会被服务端归一成全库，
    所以空视图下直接拦住提问，而不是静默搜了全库 */
 function scopeIsEmptyView() {
-  return scopeKind === "view" && viewScopeIds(docFilter).length === 0;
+  if (scopeKind !== "view") return false;
+  if (docFilter === "session") return viewDocs("session").length === 0;
+  return allDocs.length === 0;
 }
 
 function renderScopeBar() {
@@ -975,7 +1419,15 @@ function renderScopeBar() {
     });
   } else if (scopeKind === "view") {
     show = true;
-    text.textContent = `检索范围：${VIEW_SCOPE_LABEL[docFilter]} · ${viewScopeIds(docFilter).length} 篇`;
+    const sessionCount = viewDocs("session").length;
+    if (docFilter === "library") {
+      // 语料库视图 = 全库：明确把本次上传的篇数写出来，避免用户误以为被排除
+      text.textContent = sessionCount
+        ? `检索范围：全库（语料库 ${viewDocs("library").length} 篇 + 我的上传 ${sessionCount} 篇）`
+        : `检索范围：全库 · ${viewDocs("library").length} 篇`;
+    } else {
+      text.textContent = `检索范围：我的上传 · ${sessionCount} 篇`;
+    }
   }
   wrap.classList.toggle("show", show);
   // 默认语料库视图本身就是最宽口径，不展示「结束」；自定义范围或上传视图才需要一键回默认
@@ -1094,7 +1546,7 @@ document.addEventListener("keydown", (e) => {
 
 /* ================= 文档上传（支持多选 / 多文件拖拽，排队逐个索引） ================= */
 const dropzone = $("dropzone"), fileInput = $("file-input");
-const UPLOAD_ACCEPT_RE = /\.(md|txt|pdf|docx)$/i;
+const UPLOAD_ACCEPT_RE = /\.(md|txt|pdf|docx|png|jpg|jpeg|webp)$/i;
 let uploadQueue = [];
 let uploadPumping = false;
 
@@ -1120,7 +1572,7 @@ function enqueueUploads(fileList) {
       uploadQueue.push(file);
       enqueued++;
     } else {
-      toast(`已跳过 ${file.name}：仅支持 .md / .txt / .pdf / .docx`, "error");
+      toast(`已跳过 ${file.name}：仅支持 .md / .txt / .pdf / .docx / png / jpg`, "error");
     }
   }
   // 有合法文件入队就切到「我的上传」（切视图放弃显式勾选，范围跟随上传视图），传完立刻能在列表里看到它
@@ -1638,6 +2090,7 @@ async function runAgent(query, pending, scopeIds, opts = {}) {
       body: JSON.stringify({
         query,
         doc_ids: scopeIds,
+        ...(chatModel ? { model: chatModel } : {}),
         ...(opts.allowGeneral ? { allow_general: true } : {}),
       }),
       signal: controller.signal,
@@ -1667,9 +2120,15 @@ async function runAgent(query, pending, scopeIds, opts = {}) {
   let donePayload = null;
   let errEvent = null;
   let aborted = false;
+  let streamed = "";
 
   const feed = createSSEParser((event, data) => {
-    if (event === "phase") {
+    if (event === "delta") {
+      // 终答逐字到达：先用纯文本即时上屏，done 到达后再统一渲染 Markdown
+      streamed += data.text || "";
+      pending.bubble.textContent = streamed;
+      scrollBottom();
+    } else if (event === "phase") {
       live.setPhase(data.phase === "answering"
         ? "answering"
         : (data.round <= 1 ? "thinkingFirst" : "thinkingNext"));
@@ -1729,7 +2188,10 @@ async function runRagStream(query, pending, scopeIds) {
     r = await fetch("/api/chat/stream", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query, doc_ids: scopeIds }),
+      body: JSON.stringify({
+        query, doc_ids: scopeIds,
+        ...(chatModel ? { model: chatModel } : {}),
+      }),
       signal: controller.signal,
     });
   } catch (e) {

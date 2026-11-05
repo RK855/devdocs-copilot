@@ -123,7 +123,7 @@ class _SyncToAsync:
 
 async def stream_answer(
     query: str, *, store=None, llm=None, bm25=None, reranker=None, mode=None,
-    doc_ids=None,
+    doc_ids=None, model=None,
 ) -> AsyncIterator[SSEEvent]:
     """RAG 流式问答，事件顺序见设计文档 7.3 时序矩阵。
 
@@ -141,7 +141,7 @@ async def stream_answer(
     # 0. 客户端构造（真实构造失败=缺/错 API Key 等）：在发任何正常 meta 前兜住，
     #    只发 error 态 meta + error 事件；code 沿用 llm_unavailable，靠 message 区分
     try:
-        chat_llm = create_chat_client(llm)
+        chat_llm = create_chat_client(llm, model=model)
     except Exception as exc:
         message = (
             AUTH_ERROR_MESSAGE if is_config_error(exc) else LLM_UNAVAILABLE_MESSAGE

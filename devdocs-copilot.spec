@@ -41,6 +41,7 @@ for pkg in (
     "jieba",           # 自带 dict.txt 词典数据
     "docx",            # python-docx 自带 default.docx 模板
     "pypdf",           # 纯 py，整包收集成本极低，防 cmaps 类资源遗漏
+    "pymupdf",         # PDF 按坐标解析；自带 MuPDF 原生 DLL，必须整包收集
 ):
     pkg_datas, pkg_binaries, pkg_hidden = collect_all(pkg)
     datas += pkg_datas

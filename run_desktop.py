@@ -3,10 +3,10 @@ DevDocs Copilot —— 桌面版启动器（PyInstaller 打包入口）
 
 运行形态：本地 HTTP 服务 + 浏览器界面（不是传统窗口程序）。
 双击 DevDocsCopilot.exe 后的流程：
-  1. 首次启动在 exe 旁生成 .env（从包内模板拷贝），给出免费申请指引，
-     可自动打开 Key 申请网页，并用记事本打开 .env 引导填入两个 API Key；
-  2. 向量库为空时自动灌入随包预置语料（仅首次，之后重启秒开）；
-  3. 挑选一个空闲端口启动本地服务，并自动打开默认浏览器。
+  1. 首次启动在 exe 旁生成 .env（从包内模板拷贝），不做任何弹窗或记事本引导；
+  2. 直接启动本地服务并自动打开默认浏览器——模型配置全部在网页里完成：
+     没配置过模型时，前端会自动弹出「首次使用」弹窗（预填两个免费模型，填 Key 即可）；
+  3. 向量库为空且硅基流动 Key 可用时，自动灌入随包预置语料（仅首次，之后重启秒开）。
 关闭控制台窗口（或 Ctrl+C）即停止服务。
 
 开发态也可用 ``python run_desktop.py`` 调试这套桌面启动流程。
@@ -17,7 +17,6 @@ import asyncio
 import os
 import shutil
 import socket
-import subprocess
 import sys
 import threading
 import webbrowser
@@ -45,6 +44,7 @@ def _print_banner(url: str, app_home: Path) -> None:
     print("-" * 66)
     print(f"  服务地址：{url}")
     print(f"  数据目录：{app_home}")
+    print("  首次使用：网页里会自动弹出模型配置，填一个免费模型的 Key 即可")
     print("  退出方式：直接关闭本窗口，或按 Ctrl+C")
     print(line + "\n")
 
@@ -69,80 +69,6 @@ def _ensure_env_file(app_home: Path, resource_dir: Path) -> Path:
     return env_path
 
 
-def _is_real_key(value: str) -> bool:
-    """空值或模板占位符（your-xxx）都视为未配置"""
-    value = (value or "").strip()
-    return bool(value) and not value.startswith("your-")
-
-
-def _check_keys(settings, env_path: Path) -> None:
-    """两个 Key 缺一不可：免费申请说明 + 可选自动打开申请页 + 记事本引导。"""
-    missing = []
-    if not _is_real_key(settings.AGNES_API_KEY):
-        missing.append((
-            "(1)", "Agnes", "聊天模型（理解问题、组织回答）",
-            "AGNES_API_KEY", "https://agnes-ai.com",
-        ))
-    if not _is_real_key(settings.SILICONFLOW_API_KEY):
-        missing.append((
-            "(2)", "硅基流动 SiliconFlow", "向量 / 精排模型（文档语义检索）",
-            "SILICONFLOW_API_KEY", "https://siliconflow.cn",
-        ))
-    if not missing:
-        return
-
-    line = "=" * 66
-    print("\n" + line)
-    print("  首次使用 · 只差最后一步：填写两个 API Key")
-    print(line)
-    print("  程序本身不含 AI 模型，需要两个云端平台的 Key。")
-    print("  放心，这两个平台的对应模型【目前官网均可免费申请】，")
-    print("  注册即领，免费额度足够日常学习使用：")
-    print()
-    for index, name, desc, key_line, url in missing:
-        print(f"  {index} {name} —— {desc}")
-        print(f"        申请地址：{url}")
-        print(f"        填写位置：{key_line}=  等号后面")
-        print()
-    print("-" * 66)
-    print("  配置文件顶部有完整说明（含换用其他模型的方法），")
-    print("  马上为你用记事本打开：")
-    print(f"    {env_path}")
-    print()
-
-    try:
-        choice = input(
-            "  直接回车：自动打开申请网页并打开配置文件\n"
-            "  输入 n 回车：只打开配置文件（已有 Key 时选这个）\n"
-            "  > "
-        ).strip().lower()
-    except EOFError:
-        choice = "n"
-
-    if choice != "n":
-        for item in missing:
-            webbrowser.open(item[-1])
-
-    try:
-        subprocess.Popen(["notepad.exe", str(env_path)])
-    except OSError:
-        # 极端情况（精简版系统没带记事本）退回系统默认关联程序
-        os.startfile(str(env_path))  # type: ignore[attr-defined]
-
-    print()
-    print("  接下来：")
-    print("    1. 在网页里注册并创建两个 Key（复制好）")
-    print("    2. 回到记事本，把两个 Key 粘贴到对应等号后面，Ctrl+S 保存")
-    print("    3. 关闭记事本，回到本窗口按回车退出")
-    print("    4. 重新双击 DevDocsCopilot.exe，会自动灌入预置文档并打开界面")
-    print(line + "\n")
-
-    try:
-        input("  全部填好后，按回车键退出……")
-    except EOFError:
-        pass
-    sys.exit(0)
-
 
 def _find_free_port(preferred: int) -> int:
     """从首选端口开始找一个本机空闲 TCP 端口，最多试 100 个；找不到返回 0"""
@@ -165,6 +91,12 @@ def _seed_bundled_corpus_if_empty(resource_dir: Path) -> None:
     # 延迟导入：确保此时 settings 已读到 exe 旁的 .env
     from app.db.vector_store import VectorStore
     from app.scripts.seed import run_seed
+    from app.services import model_registry
+
+    if not model_registry.embedding_ready():
+        print("[提示] 尚未配置向量模型 Key（硅基流动），本次跳过预置语料灌入。")
+        print("       请在网页弹窗里选择「硅基流动」预设填写 Key，或自行上传文档。")
+        return
 
     if VectorStore().count() > 0:
         return
@@ -176,12 +108,9 @@ def _seed_bundled_corpus_if_empty(resource_dir: Path) -> None:
     try:
         result = asyncio.run(run_seed(corpus_dir, recursive=False))
     except Exception as exc:
-        print("\n[警告] 预置语料灌入失败：")
+        print("\n[警告] 预置语料灌入失败，服务仍会启动：")
         print(f"  原因：{exc}")
-        print("  常见原因：API Key 填错、网络不通。修正后重启会自动重试。")
-        choice = input("  输入 y 仍然启动（库为空，可稍后在网页里自行上传文档）；直接回车退出：")
-        if choice.strip().lower() != "y":
-            sys.exit(1)
+        print("  常见原因：Key 填错、网络不通。修正后重启会自动重试，也可直接在网页里上传文档。")
     else:
         if result.failed:
             print(f"[提示] {len(result.failed)} 个文档灌入失败，其余文档已可正常问答。")
@@ -195,10 +124,13 @@ def main() -> None:
     from app.config import APP_HOME, RESOURCE_DIR
 
     APP_HOME.mkdir(parents=True, exist_ok=True)
-    env_path = _ensure_env_file(APP_HOME, RESOURCE_DIR)
+    _ensure_env_file(APP_HOME, RESOURCE_DIR)
 
     from app.config import settings
-    _check_keys(settings, env_path)
+    from app.services import model_registry
+
+    # 界面里配置过的供应商 Key 优先于 .env：用户不需要再手改配置文件
+    model_registry.apply_provider_keys()
 
     import uvicorn
     from main import app

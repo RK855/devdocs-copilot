@@ -3,207 +3,908 @@
     "id": "what-01",
     "type": "是什么",
     "question": "什么是依赖注入？",
-    "relevant_chunks": [["python_di.md", 0]],
+    "relevant_chunks": [
+      [
+        "python_di.md",
+        0
+      ]
+    ],
     "note": "DI 定义：外部注入、松耦合、可换假对象"
   },
   {
     "id": "what-02",
     "type": "是什么",
     "question": "什么是路径参数？",
-    "relevant_chunks": [["fastapi_params.md", 0]],
+    "relevant_chunks": [
+      [
+        "fastapi_params.md",
+        0
+      ]
+    ],
     "note": "Path 定义、gt/ge 校验"
   },
   {
     "id": "what-03",
     "type": "是什么",
     "question": "什么是动态路由？",
-    "relevant_chunks": [["fastapi_routing.md", 1]],
+    "relevant_chunks": [
+      [
+        "fastapi_routing.md",
+        1
+      ]
+    ],
     "note": "{item_id} 花括号动态部分、422 类型校验"
   },
   {
     "id": "what-04",
     "type": "是什么",
     "question": "FastAPI 里的请求体指的是什么？",
-    "relevant_chunks": [["fastapi_body.md", 1]],
+    "relevant_chunks": [
+      [
+        "fastapi_body.md",
+        1
+      ]
+    ],
     "note": "Body 是 POST/PUT 携带的 JSON 数据；与 Query 区别"
   },
   {
     "id": "what-05",
     "type": "是什么",
     "question": "什么是查询参数？",
-    "relevant_chunks": [["fastapi_params.md", 1]],
+    "relevant_chunks": [
+      [
+        "fastapi_params.md",
+        1
+      ]
+    ],
     "note": "?key=value、Query()、默认值"
   },
   {
     "id": "what-06",
     "type": "是什么",
     "question": "DIP 和 DI，也就是常说的依赖倒置和依赖注入，二者中的依赖注入是什么意思？",
-    "relevant_chunks": [["python_di.md", 0]],
+    "relevant_chunks": [
+      [
+        "python_di.md",
+        0
+      ]
+    ],
     "note": "长难问句：外部注入、松耦合、可传假对象；考验检索抗噪声"
   },
-
+  {
+    "id": "what-07",
+    "type": "是什么",
+    "question": "什么是依赖覆盖（dependency_overrides）？",
+    "relevant_chunks": [
+      [
+        "fastapi_dependencies_advanced.md",
+        3
+      ]
+    ],
+    "note": "chunk-3 依赖覆盖与测试：测试时替换真实依赖"
+  },
+  {
+    "id": "what-08",
+    "type": "是什么",
+    "question": "混合检索里的 RRF 是什么？",
+    "relevant_chunks": [
+      [
+        "rag_pipeline_basics.md",
+        1
+      ]
+    ],
+    "note": "chunk-1 混合检索：RRF 倒数排名融合"
+  },
+  {
+    "id": "what-09",
+    "type": "是什么",
+    "question": "什么是强缓存？",
+    "relevant_chunks": [
+      [
+        "http_caching.md",
+        0
+      ]
+    ],
+    "note": "chunk-0 Cache-Control max-age，命中时不发请求"
+  },
+  {
+    "id": "what-10",
+    "type": "是什么",
+    "question": "什么是死信队列？",
+    "relevant_chunks": [
+      [
+        "message_queue_basics.md",
+        1
+      ]
+    ],
+    "note": "chunk-1 失败处理：超过重试次数进入死信队列并告警"
+  },
+  {
+    "id": "what-11",
+    "type": "是什么",
+    "question": "什么是特性开关？",
+    "relevant_chunks": [
+      [
+        "feature_flags.md",
+        0
+      ]
+    ],
+    "note": "chunk-0 不发布即可控制行为：灰度、A/B"
+  },
+  {
+    "id": "what-12",
+    "type": "是什么",
+    "question": "JWT 是什么，它由哪几部分组成？",
+    "relevant_chunks": [
+      [
+        "jwt_auth_flow.md",
+        0
+      ]
+    ],
+    "note": "chunk-0 header/payload/signature 三段 Base64URL"
+  },
+  {
+    "id": "what-13",
+    "type": "是什么",
+    "question": "灰度发布和流量切分是什么意思？",
+    "relevant_chunks": [
+      [
+        "api_gateway_routing.md",
+        1
+      ]
+    ],
+    "note": "chunk-1 按比例分流、观察错误率与延迟、可回滚"
+  },
+  {
+    "id": "what-14",
+    "type": "是什么",
+    "question": "什么是缓存穿透？",
+    "relevant_chunks": [
+      [
+        "cache_performance.md",
+        1
+      ]
+    ],
+    "note": "chunk-1 查不存在的数据，缓存永不命中"
+  },
+  {
+    "id": "what-15",
+    "type": "是什么",
+    "question": "CPython 的 GIL 是什么？",
+    "relevant_chunks": [
+      [
+        "python_threading_process.md",
+        0
+      ]
+    ],
+    "note": "chunk-0 全局解释器锁，同一时刻只有一个线程执行"
+  },
+  {
+    "id": "what-16",
+    "type": "是什么",
+    "question": "SSE 是什么，它和普通 HTTP 请求有什么不同？",
+    "relevant_chunks": [
+      [
+        "sse_protocol.md",
+        0
+      ]
+    ],
+    "note": "chunk-0 基于 HTTP 的单向服务器推送"
+  },
   {
     "id": "how-01",
     "type": "怎么用",
     "question": "怎么写一个能存数据的 POST 接口？",
-    "relevant_chunks": [["fastapi_routing.md", 1], ["fastapi_body.md", 0]],
+    "relevant_chunks": [
+      [
+        "fastapi_routing.md",
+        1
+      ],
+      [
+        "fastapi_body.md",
+        0
+      ]
+    ],
     "note": "'存数据' 与字面不重合，考察语义理解到 @app.post + BaseModel；两块都相关"
   },
   {
     "id": "how-02",
     "type": "怎么用",
     "question": "怎么定义一个用来读数据的 GET 接口？",
-    "relevant_chunks": [["fastapi_routing.md", 0]],
+    "relevant_chunks": [
+      [
+        "fastapi_routing.md",
+        0
+      ]
+    ],
     "note": "@app.get 装饰器、GET 用于读取"
   },
   {
     "id": "how-03",
     "type": "怎么用",
     "question": "怎么把 FastAPI 的 web 服务跑起来？",
-    "relevant_chunks": [["fastapi_startup.md", 0]],
+    "relevant_chunks": [
+      [
+        "fastapi_startup.md",
+        0
+      ]
+    ],
     "note": "F6 标定同款问法：uvicorn main:app；BM25 零命中，向量救场"
   },
   {
     "id": "how-04",
     "type": "怎么用",
     "question": "开发时怎么让服务器在我改完代码后自动重启？",
-    "relevant_chunks": [["fastapi_startup.md", 0]],
+    "relevant_chunks": [
+      [
+        "fastapi_startup.md",
+        0
+      ]
+    ],
     "note": "--reload 热重载；问法不含 reload 字面"
   },
   {
     "id": "how-05",
     "type": "怎么用",
     "question": "客户端发来的 JSON 要怎么接住？",
-    "relevant_chunks": [["fastapi_body.md", 0]],
+    "relevant_chunks": [
+      [
+        "fastapi_body.md",
+        0
+      ]
+    ],
     "note": "BaseModel 类 + 类型注解参数"
   },
   {
     "id": "how-06",
     "type": "怎么用",
     "question": "怎么让 URL 问号后面的参数在不传时也有值？",
-    "relevant_chunks": [["fastapi_params.md", 1]],
+    "relevant_chunks": [
+      [
+        "fastapi_params.md",
+        1
+      ]
+    ],
     "note": "Query(default=...)；问法绕开'默认值'之外的术语堆砌"
   },
   {
     "id": "how-07",
     "type": "怎么用",
     "question": "访问 /items/42 时怎么拿到 42 这个编号？",
-    "relevant_chunks": [["fastapi_routing.md", 1]],
+    "relevant_chunks": [
+      [
+        "fastapi_routing.md",
+        1
+      ]
+    ],
     "note": "{item_id} 动态路由参数"
   },
   {
     "id": "how-08",
     "type": "怎么用",
     "question": "数据库连接这种公共依赖要怎么写进接口里？",
-    "relevant_chunks": [["python_di.md", 0], ["python_di.md", 1]],
+    "relevant_chunks": [
+      [
+        "python_di.md",
+        0
+      ],
+      [
+        "python_di.md",
+        1
+      ]
+    ],
     "note": "Depends(get_db) 声明与注入；两块衔接同一示例"
   },
-
+  {
+    "id": "how-09",
+    "type": "怎么用",
+    "question": "怎么给 FastAPI 应用配置允许跨域访问？",
+    "relevant_chunks": [
+      [
+        "fastapi_middleware_cors.md",
+        2
+      ]
+    ],
+    "note": "chunk-2 CORSMiddleware 的 allow_origins 等参数"
+  },
+  {
+    "id": "how-10",
+    "type": "怎么用",
+    "question": "怎么自定义业务异常并统一返回错误响应？",
+    "relevant_chunks": [
+      [
+        "fastapi_error_handling.md",
+        2
+      ]
+    ],
+    "note": "chunk-2 @app.exception_handler 注册自定义异常"
+  },
+  {
+    "id": "how-11",
+    "type": "怎么用",
+    "question": "怎么给 Pydantic 模型的某个字段加自定义校验？",
+    "relevant_chunks": [
+      [
+        "pydantic_validators.md",
+        0
+      ]
+    ],
+    "note": "chunk-0 @field_validator 用法"
+  },
+  {
+    "id": "how-12",
+    "type": "怎么用",
+    "question": "写测试时怎么准备一份可复用的测试数据？",
+    "relevant_chunks": [
+      [
+        "pytest_fixtures.md",
+        0
+      ]
+    ],
+    "note": "chunk-0 @pytest.fixture 提供夹具"
+  },
+  {
+    "id": "how-13",
+    "type": "怎么用",
+    "question": "异步函数写的测试用例怎么让 pytest 跑起来？",
+    "relevant_chunks": [
+      [
+        "pytest_async_mock.md",
+        0
+      ]
+    ],
+    "note": "chunk-0 pytest-asyncio 与 asyncio_mode"
+  },
+  {
+    "id": "how-14",
+    "type": "怎么用",
+    "question": "接口返回后还要继续执行耗时操作，怎么实现？",
+    "relevant_chunks": [
+      [
+        "fastapi_background_tasks.md",
+        0
+      ]
+    ],
+    "note": "chunk-0 BackgroundTasks 响应返回后执行"
+  },
+  {
+    "id": "how-15",
+    "type": "怎么用",
+    "question": "用 SQLAlchemy 怎么定义一个用户对应多个订单的关系？",
+    "relevant_chunks": [
+      [
+        "sqlalchemy_relationships.md",
+        0
+      ]
+    ],
+    "note": "chunk-0 一对多：多一侧放外键，一那一侧 relationship"
+  },
+  {
+    "id": "how-16",
+    "type": "怎么用",
+    "question": "怎么往 Chroma 的 collection 里写入数据并查询？",
+    "relevant_chunks": [
+      [
+        "chroma_usage.md",
+        1
+      ],
+      [
+        "chroma_usage.md",
+        2
+      ]
+    ],
+    "note": "chunk-1 add(ids/documents) 代码；chunk-2 query 返回 distances"
+  },
+  {
+    "id": "how-17",
+    "type": "怎么用",
+    "question": "调用外部 HTTP 接口时怎么避免请求一直挂起？",
+    "relevant_chunks": [
+      [
+        "http_client_retry.md",
+        0
+      ]
+    ],
+    "note": "chunk-0 每个请求都必须设置超时"
+  },
+  {
+    "id": "how-18",
+    "type": "怎么用",
+    "question": "怎么让 Docker 构建出来的镜像体积更小？",
+    "relevant_chunks": [
+      [
+        "docker_image_basics.md",
+        1
+      ]
+    ],
+    "note": "chunk-1 .dockerignore 排除 venv 等构建上下文"
+  },
+  {
+    "id": "how-19",
+    "type": "怎么用",
+    "question": "怎么用一个命令把数据库和应用按顺序启动起来？",
+    "relevant_chunks": [
+      [
+        "docker_compose_services.md",
+        0
+      ],
+      [
+        "docker_compose_services.md",
+        2
+      ]
+    ],
+    "note": "chunk-0 compose 描述多服务；chunk-2 up -d 等命令"
+  },
+  {
+    "id": "how-20",
+    "type": "怎么用",
+    "question": "怎么让同一条测试逻辑用多组输入分别跑一遍？",
+    "relevant_chunks": [
+      [
+        "pytest_fixtures.md",
+        2
+      ]
+    ],
+    "note": "chunk-2 @pytest.mark.parametrize"
+  },
+  {
+    "id": "how-21",
+    "type": "怎么用",
+    "question": "怎么自己写一个可以用在 with 语句里的对象？",
+    "relevant_chunks": [
+      [
+        "python_context_manager.md",
+        0
+      ]
+    ],
+    "note": "chunk-0 实现 __enter__/__exit__"
+  },
   {
     "id": "why-01",
     "type": "为什么",
     "question": "为什么直接 python main.py 不能把网站跑起来？",
-    "relevant_chunks": [["fastapi_startup.md", 1]],
+    "relevant_chunks": [
+      [
+        "fastapi_startup.md",
+        1
+      ]
+    ],
     "note": "ASGI 应用对象必须交给 uvicorn 托管"
   },
   {
     "id": "why-02",
     "type": "为什么",
     "question": "为什么参数传了个 abc 给编号字段会收到 422？",
-    "relevant_chunks": [["fastapi_params.md", 2], ["fastapi_body.md", 1]],
+    "relevant_chunks": [
+      [
+        "fastapi_params.md",
+        2
+      ],
+      [
+        "fastapi_body.md",
+        1
+      ]
+    ],
     "note": "类型无法转换、Pydantic 校验、函数体不执行"
   },
   {
     "id": "why-03",
     "type": "为什么",
     "question": "为什么热重载上线以后就不能开了？",
-    "relevant_chunks": [["fastapi_startup.md", 0]],
+    "relevant_chunks": [
+      [
+        "fastapi_startup.md",
+        0
+      ]
+    ],
     "note": "文件监视开销与不稳定，生产用多 worker"
   },
   {
     "id": "why-04",
     "type": "为什么",
     "question": "为什么用了依赖注入以后单元测试更好写？",
-    "relevant_chunks": [["python_di.md", 2]],
+    "relevant_chunks": [
+      [
+        "python_di.md",
+        2
+      ]
+    ],
     "note": "覆盖依赖返回内存假数据、零数据库、横切关注点复用"
   },
   {
     "id": "why-05",
     "type": "为什么",
     "question": "做检索增强生成时为什么要先把长文档切成小块？",
-    "relevant_chunks": [],
-    "note": "无答案题：语料刻意不讲 RAG 原理，证据门应拦住，考察拒答"
+    "relevant_chunks": [
+      [
+        "rag_pipeline_basics.md",
+        0
+      ]
+    ],
+    "note": "原无答案题改为可答：chunk-0 讲离线索引与切分"
   },
-
+  {
+    "id": "why-06",
+    "type": "为什么",
+    "question": "既然已经有向量检索了，为什么还要混入关键词检索？",
+    "relevant_chunks": [
+      [
+        "rag_pipeline_basics.md",
+        1
+      ]
+    ],
+    "note": "chunk-1 向量擅长语义、关键词擅长精确匹配，互补"
+  },
+  {
+    "id": "why-07",
+    "type": "为什么",
+    "question": "为什么列表接口一定要分页？",
+    "relevant_chunks": [
+      [
+        "api_pagination.md",
+        0
+      ]
+    ],
+    "note": "chunk-0 一次性返回全部拖慢响应、占内存、难渲染"
+  },
+  {
+    "id": "why-08",
+    "type": "为什么",
+    "question": "为什么每个外部请求都必须设置超时？",
+    "relevant_chunks": [
+      [
+        "http_client_retry.md",
+        0
+      ]
+    ],
+    "note": "chunk-0 上游卡死时请求一直挂起"
+  },
+  {
+    "id": "why-09",
+    "type": "为什么",
+    "question": "为什么静态资源的文件名里要带一串内容哈希？",
+    "relevant_chunks": [
+      [
+        "http_caching.md",
+        1
+      ]
+    ],
+    "note": "chunk-1 内容变则文件名变，可以放心设长 max-age"
+  },
+  {
+    "id": "why-10",
+    "type": "为什么",
+    "question": "为什么容器里默认不应该用 root 用户运行？",
+    "relevant_chunks": [
+      [
+        "docker_image_basics.md",
+        2
+      ]
+    ],
+    "note": "chunk-2 默认 root 不安全，建非 root 用户"
+  },
+  {
+    "id": "why-11",
+    "type": "为什么",
+    "question": "为什么日志里不能记录密码和 token？",
+    "relevant_chunks": [
+      [
+        "logging_observability.md",
+        1
+      ]
+    ],
+    "note": "chunk-1 日志权限宽、保留久，泄露风险高"
+  },
+  {
+    "id": "why-12",
+    "type": "为什么",
+    "question": "为什么生成器遍历完一次之后再遍历就是空的？",
+    "relevant_chunks": [
+      [
+        "python_iterators_generators.md",
+        2
+      ]
+    ],
+    "note": "chunk-2 一次性消费，需要多次遍历要重建或用 tee"
+  },
+  {
+    "id": "why-13",
+    "type": "为什么",
+    "question": "为什么 SQLite 不适合高并发写入的线上服务？",
+    "relevant_chunks": [
+      [
+        "sqlite_basics.md",
+        0
+      ]
+    ],
+    "note": "chunk-0 单文件嵌入式，同一时刻只允许一个写事务"
+  },
+  {
+    "id": "why-14",
+    "type": "为什么",
+    "question": "为什么密钥要放在环境变量里而不是写进代码？",
+    "relevant_chunks": [
+      [
+        "web_security_basics.md",
+        2
+      ]
+    ],
+    "note": "chunk-2 不进仓库、不进镜像、不打日志"
+  },
+  {
+    "id": "why-15",
+    "type": "为什么",
+    "question": "删除父对象时为什么子对象没有被一起删掉？",
+    "relevant_chunks": [
+      [
+        "sqlalchemy_relationships.md",
+        3
+      ]
+    ],
+    "note": "chunk-3 级联删除需配置 cascade"
+  },
+  {
+    "id": "why-16",
+    "type": "为什么",
+    "question": "SSE 的事件帧之间为什么必须留一个空行？",
+    "relevant_chunks": [
+      [
+        "sse_protocol.md",
+        2
+      ]
+    ],
+    "note": "chunk-2 帧以空行分隔，分片可能任意位置切断"
+  },
+  {
+    "id": "why-17",
+    "type": "为什么",
+    "question": "为什么分页查询要避免 SELECT *？",
+    "relevant_chunks": [
+      [
+        "sql_query_optimization.md",
+        1
+      ]
+    ],
+    "note": "chunk-1 只取需要的列，减少数据量"
+  },
+  {
+    "id": "why-18",
+    "type": "为什么",
+    "question": "为什么中间件注册的先后顺序会影响最终执行顺序？",
+    "relevant_chunks": [
+      [
+        "fastapi_middleware_cors.md",
+        3
+      ]
+    ],
+    "note": "chunk-3 最后添加的在最外层"
+  },
   {
     "id": "cmp-01",
     "type": "对比",
     "question": "Path 参数和 Query 参数怎么区分使用？",
-    "relevant_chunks": [["fastapi_params.md", 2]],
+    "relevant_chunks": [
+      [
+        "fastapi_params.md",
+        2
+      ]
+    ],
     "note": "路径中定位资源必填 vs 问号后过滤分页可选"
   },
   {
     "id": "cmp-02",
     "type": "对比",
     "question": "GET 和 POST 各自适合干什么？",
-    "relevant_chunks": [["fastapi_routing.md", 0]],
+    "relevant_chunks": [
+      [
+        "fastapi_routing.md",
+        0
+      ]
+    ],
     "note": "GET 读取、参数在查询串；POST 创建、数据在请求体（chunk0 同时讲两者用途）"
   },
   {
     "id": "cmp-03",
     "type": "对比",
     "question": "请求体和查询参数在传数据时有什么差别？",
-    "relevant_chunks": [["fastapi_body.md", 1]],
+    "relevant_chunks": [
+      [
+        "fastapi_body.md",
+        1
+      ]
+    ],
     "note": "结构化多字段 JSON vs 简单键值对；靠参数类型区分"
   },
   {
     "id": "cmp-04",
     "type": "对比",
     "question": "用 Depends 注入和直接引用模块级全局对象相比好在哪？",
-    "relevant_chunks": [["python_di.md", 2]],
+    "relevant_chunks": [
+      [
+        "python_di.md",
+        2
+      ]
+    ],
     "note": "可替换/可隔离生命周期 vs 无法替换、共享状态污染"
   },
   {
     "id": "cmp-05",
     "type": "对比",
     "question": "uvicorn main:app 和 python main.py 两种启动方式有什么不同？",
-    "relevant_chunks": [["fastapi_startup.md", 1]],
+    "relevant_chunks": [
+      [
+        "fastapi_startup.md",
+        1
+      ]
+    ],
     "note": "ASGI 服务器托管 vs 普通脚本不监听端口"
   },
-
+  {
+    "id": "cmp-06",
+    "type": "对比",
+    "question": "SQLite 和 MySQL 这类需要独立服务的数据库有什么不同？",
+    "relevant_chunks": [
+      [
+        "sqlite_basics.md",
+        0
+      ]
+    ],
+    "note": "chunk-0 单文件嵌入式 vs 独立服务进程；写入串行"
+  },
+  {
+    "id": "cmp-07",
+    "type": "对比",
+    "question": "中间件和依赖注入适合处理什么样的问题？",
+    "relevant_chunks": [
+      [
+        "fastapi_middleware_cors.md",
+        1
+      ]
+    ],
+    "note": "chunk-1 中间件对所有请求生效、拿不到参数模型，适合横切关注点"
+  },
+  {
+    "id": "cmp-08",
+    "type": "对比",
+    "question": "缓存穿透、缓存击穿和缓存雪崩有什么不同？",
+    "relevant_chunks": [
+      [
+        "cache_performance.md",
+        1
+      ]
+    ],
+    "note": "chunk-1 三种失效场景与对应解法"
+  },
+  {
+    "id": "cmp-09",
+    "type": "对比",
+    "question": "Python 里线程和进程应该怎么选？",
+    "relevant_chunks": [
+      [
+        "python_threading_process.md",
+        0
+      ],
+      [
+        "python_threading_process.md",
+        1
+      ]
+    ],
+    "note": "chunk-0 GIL 限制 CPU 密集；chunk-1 进程池与线程池适用场景"
+  },
+  {
+    "id": "cmp-10",
+    "type": "对比",
+    "question": "SQLAlchemy 的同步 Session 和 AsyncSession 有什么不同？",
+    "relevant_chunks": [
+      [
+        "sqlalchemy_orm_basics.md",
+        1
+      ]
+    ],
+    "note": "chunk-1 会话非线程安全、异步框架用 AsyncSession"
+  },
+  {
+    "id": "cmp-11",
+    "type": "对比",
+    "question": "向量检索和关键词检索各自擅长什么？",
+    "relevant_chunks": [
+      [
+        "rag_pipeline_basics.md",
+        1
+      ]
+    ],
+    "note": "chunk-1 语义相似 vs 专有名词/错误码精确匹配"
+  },
+  {
+    "id": "cmp-12",
+    "type": "对比",
+    "question": "dataclass 和 Pydantic 模型有什么区别？",
+    "relevant_chunks": [
+      [
+        "python_types.md",
+        1
+      ]
+    ],
+    "note": "chunk-1 dataclass 只声明结构、运行时不校验；Pydantic 负责校验"
+  },
+  {
+    "id": "cmp-13",
+    "type": "对比",
+    "question": "NamedTuple 和 dataclass 该怎么选？",
+    "relevant_chunks": [
+      [
+        "python_dataclass.md",
+        2
+      ]
+    ],
+    "note": "chunk-2 不可变元组、支持索引与解包 vs 可变数据类"
+  },
   {
     "id": "code-01",
     "type": "代码类",
     "question": "@app.post 这个装饰器应该怎么用？",
-    "relevant_chunks": [["fastapi_routing.md", 1], ["fastapi_routing.md", 0]],
+    "relevant_chunks": [
+      [
+        "fastapi_routing.md",
+        1
+      ],
+      [
+        "fastapi_routing.md",
+        0
+      ]
+    ],
     "note": "精确标识符匹配；BM25 强项"
   },
   {
     "id": "code-02",
     "type": "代码类",
     "question": "@app.get 写的路由为什么浏览器一刷新就执行？",
-    "relevant_chunks": [["fastapi_routing.md", 0]],
+    "relevant_chunks": [
+      [
+        "fastapi_routing.md",
+        0
+      ]
+    ],
     "note": "标识符 + 语义混合：chunk0 讲 GET 可直接浏览器访问"
   },
   {
     "id": "code-03",
     "type": "代码类",
     "question": "Depends(get_db) 这行代码应该放在函数的什么位置？",
-    "relevant_chunks": [["python_di.md", 1], ["python_di.md", 0]],
+    "relevant_chunks": [
+      [
+        "python_di.md",
+        1
+      ],
+      [
+        "python_di.md",
+        0
+      ]
+    ],
     "note": "路径函数参数里；chunk1 是完整代码，chunk0 是声明说明"
   },
   {
     "id": "code-04",
     "type": "代码类",
     "question": "uvicorn main:app --reload 这条命令每个部分是什么意思？",
-    "relevant_chunks": [["fastapi_startup.md", 0]],
+    "relevant_chunks": [
+      [
+        "fastapi_startup.md",
+        0
+      ]
+    ],
     "note": "main 文件名/app 实例名/--reload 热重载，均在 chunk0"
   },
   {
     "id": "code-05",
     "type": "代码类",
     "question": "class Item(BaseModel) 这样的模型类要怎么写字段？",
-    "relevant_chunks": [["fastapi_body.md", 0]],
+    "relevant_chunks": [
+      [
+        "fastapi_body.md",
+        0
+      ]
+    ],
     "note": "name:str / price:float 类型注解字段"
   },
   {
@@ -212,5 +913,452 @@
     "question": "线上报错 KeyError: 'token' 应该怎么排查修复？",
     "relevant_chunks": [],
     "note": "无答案题：语料无任何报错排查内容，证据门应拦住"
+  },
+  {
+    "id": "code-07",
+    "type": "代码类",
+    "question": "@field_validator 这个装饰器怎么用？",
+    "relevant_chunks": [
+      [
+        "pydantic_validators.md",
+        0
+      ]
+    ],
+    "note": "chunk-0 声明类方法、return self"
+  },
+  {
+    "id": "code-08",
+    "type": "代码类",
+    "question": "@pytest.fixture 装饰的函数该怎么被测试用例拿到？",
+    "relevant_chunks": [
+      [
+        "pytest_fixtures.md",
+        0
+      ]
+    ],
+    "note": "chunk-0 夹具名作为测试函数参数"
+  },
+  {
+    "id": "code-09",
+    "type": "代码类",
+    "question": "@contextmanager 怎么把一个生成器变成上下文管理器？",
+    "relevant_chunks": [
+      [
+        "python_context_manager.md",
+        2
+      ]
+    ],
+    "note": "chunk-2 contextlib.contextmanager 装饰生成器"
+  },
+  {
+    "id": "code-10",
+    "type": "代码类",
+    "question": "asyncio.TaskGroup() 该怎么用？",
+    "relevant_chunks": [
+      [
+        "async_python_concurrency.md",
+        1
+      ]
+    ],
+    "note": "chunk-1 async with TaskGroup 并发创建任务"
+  },
+  {
+    "id": "code-11",
+    "type": "代码类",
+    "question": "@app.exception_handler 这个装饰器怎么用？",
+    "relevant_chunks": [
+      [
+        "fastapi_error_handling.md",
+        2
+      ]
+    ],
+    "note": "chunk-2 自定义异常统一处理"
+  },
+  {
+    "id": "code-12",
+    "type": "代码类",
+    "question": "selectinload() 在查询里起什么作用？",
+    "relevant_chunks": [
+      [
+        "sqlalchemy_orm_basics.md",
+        4
+      ]
+    ],
+    "note": "chunk-4 预加载关联对象，避免 N+1"
+  },
+  {
+    "id": "code-13",
+    "type": "代码类",
+    "question": "@pytest.mark.parametrize 怎么给用例传多组参数？",
+    "relevant_chunks": [
+      [
+        "pytest_fixtures.md",
+        2
+      ]
+    ],
+    "note": "chunk-2 参数化用法"
+  },
+  {
+    "id": "code-14",
+    "type": "代码类",
+    "question": "add_middleware 是在哪里注册中间件的？",
+    "relevant_chunks": [
+      [
+        "fastapi_middleware_cors.md",
+        0
+      ]
+    ],
+    "note": "chunk-0 中间件是包裹 ASGI 应用的一层"
+  },
+  {
+    "id": "code-15",
+    "type": "代码类",
+    "question": "BackgroundTasks 这个参数要怎么声明和使用？",
+    "relevant_chunks": [
+      [
+        "fastapi_background_tasks.md",
+        0
+      ]
+    ],
+    "note": "chunk-0 函数参数声明，add_task 添加任务"
+  },
+  {
+    "id": "code-16",
+    "type": "代码类",
+    "question": "class Settings(BaseSettings) 这种配置类该怎么写字段？",
+    "relevant_chunks": [
+      [
+        "python_config_management.md",
+        1
+      ]
+    ],
+    "note": "chunk-1 pydantic-settings 从环境变量读取"
+  },
+  {
+    "id": "code-17",
+    "type": "代码类",
+    "question": "@dataclass 装饰器会自动生成哪些方法？",
+    "relevant_chunks": [
+      [
+        "python_dataclass.md",
+        0
+      ]
+    ],
+    "note": "chunk-0 自动生成 __init__/__repr__ 等"
+  },
+  {
+    "id": "reject-01",
+    "type": "无答案",
+    "question": "Celery 里怎么配置定时任务？",
+    "relevant_chunks": [],
+    "note": "语料未覆盖 Celery，证据门应拒答"
+  },
+  {
+    "id": "reject-02",
+    "type": "无答案",
+    "question": "React 的 useEffect 依赖数组有什么用？",
+    "relevant_chunks": [],
+    "note": "语料未覆盖 React，证据门应拒答"
+  },
+  {
+    "id": "reject-03",
+    "type": "无答案",
+    "question": "Kubernetes 的 Deployment 怎么做滚动更新？",
+    "relevant_chunks": [],
+    "note": "语料未覆盖 Kubernetes，证据门应拒答"
+  },
+  {
+    "id": "reject-04",
+    "type": "无答案",
+    "question": "GraphQL 的 schema 怎么定义？",
+    "relevant_chunks": [],
+    "note": "语料未覆盖 GraphQL，证据门应拒答"
+  },
+  {
+    "id": "reject-05",
+    "type": "无答案",
+    "question": "MongoDB 里怎么建复合索引？",
+    "relevant_chunks": [],
+    "note": "语料未覆盖 MongoDB，证据门应拒答"
+  },
+  {
+    "id": "reject-06",
+    "type": "无答案",
+    "question": "SwiftUI 里的 @State 是什么？",
+    "relevant_chunks": [],
+    "note": "语料未覆盖 SwiftUI，证据门应拒答"
+  },
+  {
+    "id": "reject-07",
+    "type": "无答案",
+    "question": "Photoshop 里怎么把人物从背景里抠出来？",
+    "relevant_chunks": [],
+    "note": "语料未覆盖图像处理软件，证据门应拒答"
+  },
+  {
+    "id": "reject-08",
+    "type": "无答案",
+    "question": "微信小程序的登录流程是怎么走的？",
+    "relevant_chunks": [],
+    "note": "语料未覆盖小程序，证据门应拒答"
+  },
+  {
+    "id": "reject-09",
+    "type": "无答案",
+    "question": "Rust 的所有权规则是什么？",
+    "relevant_chunks": [],
+    "note": "语料未覆盖 Rust，证据门应拒答"
+  },
+  {
+    "id": "reject-10",
+    "type": "无答案",
+    "question": "Excel 的 VBA 宏怎么写？",
+    "relevant_chunks": [],
+    "note": "语料未覆盖 VBA，证据门应拒答"
+  },
+  {
+    "id": "reject-11",
+    "type": "无答案",
+    "question": "CSS 的 keyframes 动画怎么写？",
+    "relevant_chunks": [],
+    "note": "语料未覆盖 CSS 动画，证据门应拒答"
+  },
+  {
+    "id": "reject-12",
+    "type": "无答案",
+    "question": "机器学习模型的超参数应该怎么调？",
+    "relevant_chunks": [],
+    "note": "语料未覆盖机器学习，证据门应拒答"
+  },
+  {
+    "id": "reject-13",
+    "type": "无答案",
+    "question": "Android 的 Activity 生命周期有哪几个回调？",
+    "relevant_chunks": [],
+    "note": "语料未覆盖 Android，证据门应拒答"
+  },
+  {
+    "id": "reject-14",
+    "type": "无答案",
+    "question": "雪花算法是怎么生成分布式 ID 的？",
+    "relevant_chunks": [],
+    "note": "语料未覆盖分布式 ID，证据门应拒答"
+  },
+  {
+    "id": "reject-15",
+    "type": "无答案",
+    "question": "Kafka 的分区和消费者组是怎么对应的？",
+    "relevant_chunks": [],
+    "note": "语料未覆盖 Kafka，证据门应拒答"
+  },
+  {
+    "id": "reject-16",
+    "type": "无答案",
+    "question": "Vue 3 里 ref 和 reactive 有什么区别？",
+    "relevant_chunks": [],
+    "note": "库外题：Vue 3 响应式 API，语料未覆盖"
+  },
+  {
+    "id": "reject-17",
+    "type": "无答案",
+    "question": "Go 的 goroutine 泄漏一般是怎么排查的？",
+    "relevant_chunks": [],
+    "note": "库外题：Go 并发模型，语料未覆盖"
+  },
+  {
+    "id": "reject-18",
+    "type": "无答案",
+    "question": "Spring Boot 的自动装配是怎么实现的？",
+    "relevant_chunks": [],
+    "note": "库外题：Java Spring 生态，语料未覆盖"
+  },
+  {
+    "id": "reject-19",
+    "type": "无答案",
+    "question": "Elasticsearch 的倒排索引为什么比 MySQL 的 B+ 树适合全文检索？",
+    "relevant_chunks": [],
+    "note": "库外题：搜索引擎原理，语料未覆盖"
+  },
+  {
+    "id": "reject-20",
+    "type": "无答案",
+    "question": "ClickHouse 的 MergeTree 引擎怎么设计分区键？",
+    "relevant_chunks": [],
+    "note": "库外题：列式数据库，语料未覆盖"
+  },
+  {
+    "id": "reject-21",
+    "type": "无答案",
+    "question": "Terraform 的 state 文件为什么不能提交到 Git？",
+    "relevant_chunks": [],
+    "note": "库外题：IaC 工具，语料未覆盖"
+  },
+  {
+    "id": "reject-22",
+    "type": "无答案",
+    "question": "Ansible 的 playbook 里怎么用 handler 触发重启？",
+    "relevant_chunks": [],
+    "note": "库外题：配置管理工具，语料未覆盖"
+  },
+  {
+    "id": "reject-23",
+    "type": "无答案",
+    "question": "Jenkins 的声明式流水线怎么并行执行 stage？",
+    "relevant_chunks": [],
+    "note": "库外题：具体 CI 工具，语料只讲通用流水线"
+  },
+  {
+    "id": "reject-24",
+    "type": "无答案",
+    "question": "Prometheus 的 PromQL 里 rate 和 irate 有什么区别？",
+    "relevant_chunks": [],
+    "note": "库外题：具体监控工具，语料只讲可观测性概念"
+  },
+  {
+    "id": "reject-25",
+    "type": "无答案",
+    "question": "Grafana 的告警规则怎么配置静默期？",
+    "relevant_chunks": [],
+    "note": "库外题：具体监控工具，语料未覆盖"
+  },
+  {
+    "id": "reject-26",
+    "type": "无答案",
+    "question": "Spark 的 RDD 和 DataFrame 在执行效率上有什么差别？",
+    "relevant_chunks": [],
+    "note": "库外题：大数据计算引擎，语料未覆盖"
+  },
+  {
+    "id": "reject-27",
+    "type": "无答案",
+    "question": "Airflow 的 DAG 里怎么设置任务依赖和重试？",
+    "relevant_chunks": [],
+    "note": "库外题：调度平台，语料未覆盖"
+  },
+  {
+    "id": "reject-28",
+    "type": "无答案",
+    "question": "Flink 的水位线是怎么处理乱序事件的？",
+    "relevant_chunks": [],
+    "note": "库外题：流式计算，语料未覆盖"
+  },
+  {
+    "id": "reject-29",
+    "type": "无答案",
+    "question": "以太坊智能合约的 gas 费是怎么计算的？",
+    "relevant_chunks": [],
+    "note": "库外题：区块链，语料未覆盖"
+  },
+  {
+    "id": "reject-30",
+    "type": "无答案",
+    "question": "Unity 里协程和 Update 的生命周期有什么不同？",
+    "relevant_chunks": [],
+    "note": "库外题：游戏引擎，语料未覆盖"
+  },
+  {
+    "id": "reject-31",
+    "type": "无答案",
+    "question": "微信支付的统一下单接口签名怎么生成？",
+    "relevant_chunks": [],
+    "note": "库外题：支付平台，语料未覆盖"
+  },
+  {
+    "id": "reject-32",
+    "type": "无答案",
+    "question": "支付宝小程序的支付流程要走哪几步？",
+    "relevant_chunks": [],
+    "note": "库外题：支付平台，语料未覆盖"
+  },
+  {
+    "id": "reject-33",
+    "type": "无答案",
+    "question": "iOS 的 Auto Layout 里约束优先级怎么用？",
+    "relevant_chunks": [],
+    "note": "库外题：iOS 布局，语料未覆盖"
+  },
+  {
+    "id": "reject-34",
+    "type": "无答案",
+    "question": "Kotlin 的 suspend 函数为什么不会阻塞线程？",
+    "relevant_chunks": [],
+    "note": "库外题：Kotlin 协程，语料未覆盖"
+  },
+  {
+    "id": "reject-35",
+    "type": "无答案",
+    "question": "Flutter 的 StatefulWidget 生命周期有哪些阶段？",
+    "relevant_chunks": [],
+    "note": "库外题：Flutter 框架，语料未覆盖"
+  },
+  {
+    "id": "reject-36",
+    "type": "无答案",
+    "question": "Electron 的主进程和渲染进程之间怎么通信？",
+    "relevant_chunks": [],
+    "note": "库外题：桌面端框架，语料未覆盖"
+  },
+  {
+    "id": "reject-37",
+    "type": "无答案",
+    "question": "TensorFlow 的 tf.function 和图模式有什么作用？",
+    "relevant_chunks": [],
+    "note": "库外题：深度学习框架，语料未覆盖"
+  },
+  {
+    "id": "reject-38",
+    "type": "无答案",
+    "question": "PyTorch 的 autograd 是怎么计算梯度的？",
+    "relevant_chunks": [],
+    "note": "库外题：深度学习框架，语料未覆盖"
+  },
+  {
+    "id": "reject-39",
+    "type": "无答案",
+    "question": "强化学习里的 Q-learning 更新公式怎么推导？",
+    "relevant_chunks": [],
+    "note": "库外题：强化学习，语料未覆盖"
+  },
+  {
+    "id": "reject-40",
+    "type": "无答案",
+    "question": "Hadoop 的 MapReduce 在 shuffle 阶段做了什么？",
+    "relevant_chunks": [],
+    "note": "库外题：大数据计算，语料未覆盖"
+  },
+  {
+    "id": "reject-41",
+    "type": "无答案",
+    "question": "HBase 的 RowKey 设计为什么要避免热点？",
+    "relevant_chunks": [],
+    "note": "库外题：列式存储，语料未覆盖"
+  },
+  {
+    "id": "reject-42",
+    "type": "无答案",
+    "question": "Zookeeper 的 Leader 选举流程是怎样的？",
+    "relevant_chunks": [],
+    "note": "库外题：分布式协调，语料未覆盖"
+  },
+  {
+    "id": "reject-43",
+    "type": "无答案",
+    "question": "Docker Swarm 和 Kubernetes 在服务编排上怎么选？",
+    "relevant_chunks": [],
+    "note": "库外题：容器编排，语料只讲镜像与 Compose"
+  },
+  {
+    "id": "reject-44",
+    "type": "无答案",
+    "question": "用 eBPF 追踪 Linux 系统调用需要写什么程序？",
+    "relevant_chunks": [],
+    "note": "库外题：Linux 内核观测，语料未覆盖"
+  },
+  {
+    "id": "reject-45",
+    "type": "无答案",
+    "question": "MySQL 的主从复制延迟一般怎么排查？",
+    "relevant_chunks": [],
+    "note": "库外题：数据库复制，语料只讲查询优化"
   }
 ]

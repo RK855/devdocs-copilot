@@ -1345,7 +1345,7 @@ class TestAgentProgressEvents:
 
 
 async def test_run_agent_without_llm_and_missing_api_key_returns_error(monkeypatch):
-    """真实构造缝（agent_service.AgnesChatClient）遇缺 Key 抛异常：
+    """真实构造缝（agent_service.create_chat_client）遇缺 Key 抛异常：
     与 chat/stream 链路同纪律，收敛为 error 态业务响应，而不是裸异常炸出 500"""
     monkeypatch.setattr(settings, "AGNES_API_KEY", "")
 
@@ -1355,3 +1355,54 @@ async def test_run_agent_without_llm_and_missing_api_key_returns_error(monkeypat
     assert resp.answer == AUTH_ERROR_MESSAGE
     assert resp.steps == []
     assert resp.sources == []
+
+
+class FakeStreamingAgentLLM(FakeAgentLLM):
+    """在 FakeAgentLLM 之上补流式接口：用于验证 on_delta 逐字回调挂载"""
+
+    def stream_chat(self, messages, *, tools=None, on_delta=None):
+        turn = super().chat(messages, tools=tools)
+        if on_delta is not None and turn.content:
+            on_delta(turn.content)
+        return turn
+
+    def stream_generate(self, messages):
+        text = super().generate(messages)
+        yield text
+
+
+class TestAgentTokenStreaming:
+    """终答逐字流式：传入 on_delta 且客户端支持流式时才启用，不传行为不变"""
+
+    async def test_stream_chat_pushes_final_answer_deltas(self, stub_evidence):
+        stub_evidence.map = {
+            "怎么启动": Evidence(hits=[_hit("c1")], ok=True, scored=True),
+        }
+        llm = FakeStreamingAgentLLM([
+            _turn(_call("c1", "search_docs", {"query": "怎么启动", "top_k": 5})),
+            _turn(content="用 uvicorn 启动。"),
+        ])
+        deltas = []
+
+        resp = await agent_service.run_agent(
+            "怎么启动", llm=llm, on_delta=deltas.append
+        )
+
+        assert deltas == ["用 uvicorn 启动。"]
+        assert "uvicorn" in resp.answer
+
+    async def test_forced_answer_after_max_steps_uses_stream_generate(
+        self, stub_evidence
+    ):
+        stub_evidence.map = {
+            "启动": Evidence(hits=[_hit("c1")], ok=True, scored=True),
+        }
+        llm = FakeStreamingAgentLLM(
+            [_turn(_call("c1", "search_docs", {"query": "启动", "top_k": 5}))],
+            final_text="基于检索结果的收尾答案。",
+        )
+        deltas = []
+
+        await agent_service.run_agent("启动", llm=llm, on_delta=deltas.append)
+
+        assert deltas == ["基于检索结果的收尾答案。"]

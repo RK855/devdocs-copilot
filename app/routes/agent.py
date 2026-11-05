@@ -30,6 +30,7 @@ async def query_agent(req: ChatRequest):
         req.query,
         doc_ids=req.doc_ids,
         allow_general=req.allow_general,
+        model=req.model,
     )
 
 
@@ -49,7 +50,8 @@ async def stream_agent(req: ChatRequest):
     """边执行边推执行轨迹（当前轮次/工具名/查询词/成败），终态整包 done。
 
     事件序列：phase(thinking) → [tool_start → tool_end → phase(thinking)]*
-              → [phase(answering)]? → done；done.data 即完整 AgentChatResponse。
+              → [phase(answering) → delta*]? → done；done.data 即完整 AgentChatResponse。
+    delta.data 为 {"text": "..."}，按到达顺序追加即可看到终答逐字生成。
     """
 
     async def event_generator():
@@ -57,9 +59,18 @@ async def stream_agent(req: ChatRequest):
         # 客户端断连时 finally 取消任务，及时停止后续轮次的上游调用
         queue: asyncio.Queue = asyncio.Queue()
         sentinel = object()
+        loop = asyncio.get_running_loop()
 
         async def on_event(event: dict) -> None:
             await queue.put(("event", event))
+
+        def on_delta(text: str) -> None:
+            # run_agent 用 to_thread 消费同步流，回调发生在工作线程；
+            # 必须通过 call_soon_threadsafe 才能安全入队
+            try:
+                loop.call_soon_threadsafe(queue.put_nowait, ("delta", text))
+            except RuntimeError:  # 客户端已断开、事件循环关闭
+                pass
 
         async def drive() -> None:
             try:
@@ -68,6 +79,8 @@ async def stream_agent(req: ChatRequest):
                     doc_ids=req.doc_ids,
                     allow_general=req.allow_general,
                     on_event=on_event,
+                    on_delta=on_delta,
+                    model=req.model,
                 )
                 await queue.put(("done", resp.model_dump()))
             except asyncio.CancelledError:
@@ -87,6 +100,8 @@ async def stream_agent(req: ChatRequest):
                 kind, payload = item
                 if kind == "done":
                     yield _format_sse("done", payload)
+                elif kind == "delta":
+                    yield _format_sse("delta", {"text": payload})
                 elif kind == "fatal":
                     yield _format_sse("error", _STREAM_INTERRUPTED)
                 elif payload["type"] == "round_start":

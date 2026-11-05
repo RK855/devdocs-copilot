@@ -68,6 +68,18 @@ class TestUploadApi:
         assert r.status_code == 400
         assert "10MB" in r.json()["detail"]
 
+    def test_upload_without_embedding_key_returns_friendly_400(self, client, monkeypatch):
+        """向量模型 Key 未配置时不打外部 API，直接给可操作的 400 提示"""
+        monkeypatch.setattr(settings, "SILICONFLOW_API_KEY", "your-siliconflow-key")
+
+        r = client.post(
+            "/api/documents/upload",
+            files={"file": ("guide.md", b"content", "text/markdown")},
+        )
+
+        assert r.status_code == 400
+        assert "向量模型" in r.json()["detail"]
+
 
 class TestListAndDeleteApi:
     def test_full_list_then_delete_flow(self, client):

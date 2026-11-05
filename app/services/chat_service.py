@@ -45,16 +45,18 @@ def _error_response(started: float, message: str,
 
 
 async def answer_question(query: str, *, store=None, llm=None, bm25=None,
-                          reranker=None, mode=None, doc_ids=None) -> ChatResponse:
+                          reranker=None, mode=None, doc_ids=None,
+                          model=None) -> ChatResponse:
     """回答单个问题。阻塞调用全部在线程池中处理，避免卡死事件循环。
 
     doc_ids 非空时只在指定文档范围内检索（Day 13++ 文档级圈选）。
+    model 为空用服务端默认；仅切换聊天模型，检索/嵌入不随之变化。
     """
     started = time.perf_counter()
 
     try:
         # 统一构造入口（注入替身或真实客户端，构造失败归一 LLMConfigError）
-        chat_llm = create_chat_client(llm)
+        chat_llm = create_chat_client(llm, model=model)
     except Exception:
         # 真实客户端构造失败（缺/错 API Key 等）：统一认证配置文案
         return _error_response(started, AUTH_ERROR_MESSAGE)

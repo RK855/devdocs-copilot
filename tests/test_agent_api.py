@@ -40,6 +40,19 @@ class StubAgentLLM:
         return "部分回答：资料不足。"
 
 
+class StubStreamingAgentLLM(StubAgentLLM):
+    """补流式接口的 Agent Stub：验证 /stream 的 delta 事件"""
+
+    def stream_chat(self, messages, *, tools=None, on_delta=None):
+        turn = self.chat(messages, tools=tools)
+        if on_delta is not None and turn.content:
+            on_delta(turn.content)
+        return turn
+
+    def stream_generate(self, messages):
+        yield self.generate(messages)
+
+
 class StubRagLLM:
     """回归用：老 RAG 端点的 Fake"""
 
@@ -63,7 +76,10 @@ class StubReranker:
 def client(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "UPLOAD_DIR", tmp_path / "uploads")
     monkeypatch.setattr(settings, "CHROMA_DATA_DIR", tmp_path / "chroma")
-    monkeypatch.setattr(agent_service, "AgnesChatClient", StubAgentLLM)
+    monkeypatch.setattr(
+        agent_service, "create_chat_client",
+        lambda llm=None, model=None: llm or StubAgentLLM(),
+    )
     # /api/chat/query 回归用例：chat_service 经 create_chat_client 在 llm_client
     # 模块内解析 AgnesChatClient（与 Agent 自己的模块级构造缝互不影响）
     monkeypatch.setattr(llm_client, "AgnesChatClient", StubRagLLM)
@@ -253,6 +269,25 @@ class TestAgentStreamApi:
         assert done["steps"][0]["tool"] == "search_docs"
         assert done["degraded"] is False
 
+    def test_stream_emits_delta_before_done(self, client, monkeypatch):
+        monkeypatch.setattr(
+            agent_service, "create_chat_client",
+            lambda llm=None, model=None: llm or StubStreamingAgentLLM(),
+        )
+        _upload_fastapi_doc(client)
+
+        with client.stream(
+            "POST", "/api/agent/stream", json={"query": "FastAPI 怎么启动？"}
+        ) as r:
+            events = _parse_sse(r.read().decode("utf-8"))
+
+        names = [n for n, _ in events]
+        assert names == ["phase", "tool_start", "tool_end", "phase", "delta", "done"]
+        delta = events[4][1]
+        assert "uvicorn main:app" in delta["text"]
+        # done 仍是完整答案，前端用它覆盖纯文本增量、统一渲染 Markdown
+        assert "uvicorn main:app" in events[5][1]["answer"]
+
     def test_stream_pipeline_failure_still_done_mode_error(self, client, monkeypatch):
         async def _boom(*args, **kwargs):
             raise RuntimeError("检索管线爆炸")
@@ -312,7 +347,10 @@ class StubCodeAgentLLM:
 
 class TestAgentCodeToolApi:
     def test_code_generation_flow_via_http(self, client, monkeypatch):
-        monkeypatch.setattr(agent_service, "AgnesChatClient", StubCodeAgentLLM)
+        monkeypatch.setattr(
+            agent_service, "create_chat_client",
+            lambda llm=None, model=None: llm or StubCodeAgentLLM(),
+        )
         _upload_fastapi_doc(client)
 
         r = client.post("/api/agent/query", json={"query": "给个启动示例"})

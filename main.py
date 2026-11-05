@@ -18,7 +18,9 @@ from app.errors import DocumentValidationError
 from app.routes.chat import router as chat_router
 from app.routes.agent import router as agent_router
 from app.routes.documents import router as documents_router
+from app.routes.models import router as models_router
 from app.services import document_service
+from app.services import model_registry
 
 # 前端静态目录：开发态在项目根，桌面版在包内 _MEIPASS，从任意工作目录启动都能找到
 STATIC_DIR = RESOURCE_DIR / "static"
@@ -34,6 +36,8 @@ async def lifespan(app: FastAPI):
     """
     settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     settings.CHROMA_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    # 界面里配置过的供应商 Key（如硅基流动）优先于 .env：桌面版用户无需再手改配置文件
+    model_registry.apply_provider_keys()
 
     def _rebuild_bm25() -> None:
         store = VectorStore()
@@ -79,6 +83,7 @@ async def document_validation_error_handler(request: Request, exc: DocumentValid
 app.include_router(documents_router, prefix="/api/documents", tags=["文档管理"])
 app.include_router(chat_router, prefix="/api/chat", tags=["智能问答"])
 app.include_router(agent_router, prefix="/api/agent", tags=["Agent 问答"])
+app.include_router(models_router, prefix="/api/models", tags=["模型"])
 
 
 # ========== 4.1 API 路径兜底（必须早于静态兜底挂载） ==========

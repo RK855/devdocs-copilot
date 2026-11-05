@@ -18,6 +18,10 @@ from rank_bm25 import BM25Okapi
 # 第一轮：英文/数字代码词（含下划线，整体保留）或连续中文段，其余字符天然当分隔符
 _CODE_OR_CJK = re.compile(r"[a-z0-9_]+|[\u4e00-\u9fff]+")
 
+# PDF 多栏/字距常把中文词拆成 "何 能"、"电 话"；只去掉中文之间的空白，
+# 不动英文词内部的空格（"Spring Boot" 仍应切成两个代码词）
+_CJK_GAP = re.compile(r"(?<=[\u4e00-\u9fff])\s+(?=[\u4e00-\u9fff])")
+
 # 停用词：任何问句里都高频出现、对区分文档毫无贡献的词。
 # 不剔除的话"的/与/怎么"会让候选预筛永远命中，BM25 的空结果信号失效（F6 接入问答时的实战教训）。
 _STOPWORDS = frozenset({
@@ -36,17 +40,20 @@ _STOPWORDS = frozenset({
 
 
 def tokenize(text: str) -> list[str]:
-    """建索引与查询共用的唯一切词入口：小写 → 代码词整体保留 → 中文段交 jieba → 去停用词。
+    """建索引与查询共用的唯一切词入口：小写 → 去中文词间空格 → 代码词整体保留
+    → 中文段交 jieba 搜索模式 → 去停用词。
 
     两边规则必须完全一致，否则 @app.get 索引切成 app/get，查询切法不同就形同陌路。
-    例：@app.get → [app, get]；query_similar → [query_similar]；红烧肉的做法 → [红烧肉, 做法]
+    中文用 lcut_for_search 而非 lcut：查询"电话号码"要能命中正文里的"电话"，
+    整词模式会切成"电话号码"一个词导致零交集（简历/专有名词场景实测踩坑）。
+    例：@app.get → [app, get]；电话号码 → [电话, 号码]；红烧肉的做法 → [红烧肉, 红烧, 烧肉, 做法]
     """
     tokens: list[str] = []
-    for piece in _CODE_OR_CJK.findall(text.lower()):
+    for piece in _CODE_OR_CJK.findall(_CJK_GAP.sub("", text.lower())):
         if piece[0].isascii():
             candidates = [piece]           # 代码/英文词整体保留，下划线与数字不拆
         else:
-            candidates = (t for t in jieba.lcut(piece) if t.strip())
+            candidates = (t for t in jieba.lcut_for_search(piece) if t.strip())
         tokens.extend(t for t in candidates if t not in _STOPWORDS)
     return tokens
 

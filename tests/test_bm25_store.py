@@ -22,8 +22,18 @@ class TestTokenize:
 
     def test_drops_common_chinese_stopwords(self):
         # "的/怎么" 篇篇出现，必须在分词阶段剔除，否则候选预筛永远命中
-        assert tokenize("红烧肉的做法") == ["红烧肉", "做法"]
+        tokens = tokenize("红烧肉的做法")
+        assert "红烧肉" in tokens and "做法" in tokens
+        assert "的" not in tokens
         assert "怎么" not in tokenize("@app.get 怎么用")
+
+    def test_search_mode_splits_long_word_into_subwords(self):
+        # 查询词"电话号码"在正文里只有"电话"，整词索引会零交集，必须切成子词
+        assert "电话" in tokenize("他的电话号码是多少")
+
+    def test_ignores_space_between_cjk_characters(self):
+        # PDF 多栏/字距会在姓名中间插空格，正文 "何 能" 必须能与查询 "何能" 命中
+        assert "何能" in tokenize("何 能\n求职意向")
 
 
 class TestBM25StoreSearch:
@@ -52,6 +62,24 @@ class TestBM25StoreSearch:
 
         assert hits[0]["doc_id"] == "d1"
         assert hits[0]["chunk_id"] == "d1:chunk-0"
+
+    def test_long_query_word_hits_shorter_document_word(self):
+        # 回归：简历正文写"电话 150…"，用户问"电话号码是多少"，曾因分词粒度不同零命中
+        store = BM25Store()
+        store.add_document("d1", ["电话 15007829582 邮箱 a@b.com"], "resume.pdf")
+
+        hits = store.search("他的电话号码是多少", top_k=1)
+
+        assert hits and hits[0]["doc_id"] == "d1"
+
+    def test_name_with_spaces_in_document_still_matches(self):
+        # 回归：PDF 提取出的 "何 能" 被空格切开，问"何能"曾完全检索不到
+        store = BM25Store()
+        store.add_document("d1", ["何 能\n求职意向：Java 后端开发工程师"], "resume.pdf")
+
+        hits = store.search("何能", top_k=1)
+
+        assert hits and hits[0]["doc_id"] == "d1"
 
     def test_search_is_case_insensitive(self):
         store = BM25Store()

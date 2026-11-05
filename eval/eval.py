@@ -2,7 +2,8 @@
 
 用法（在项目根目录、虚拟环境中）：
   python -m eval.eval --dump   灌入 eval/corpus 并打印每个 chunk 的坐标，供标注 questions.json
-  python -m eval.eval          跑 30 题四组评测，结果同时打印并写 eval/results/YYYY-MM-DD.md
+  python -m eval.eval          跑全量题目四组评测（默认重复 3 轮），结果打印并写 eval/results/YYYY-MM-DD.md
+  python -m eval.eval --runs 1 只跑一轮（快速回归）
 
 评测库使用系统临时目录 + 独立 collection（devdocs_eval），与线上 uploads/data 完全隔离，
 跑完自动清理。数字全部来自真实运行，严禁手工修改。
@@ -13,9 +14,11 @@
 """
 import argparse
 import asyncio
+import contextlib
 import gc
 import json
 import shutil
+import statistics
 import tempfile
 import time
 from datetime import date
@@ -101,11 +104,8 @@ def judge(hits: list[dict], gold: set[tuple]) -> tuple[float, float, float]:
     return recall, reciprocal_rank, precision
 
 
-async def run_eval(workdir: Path) -> str:
-    questions = json.loads(QUESTIONS_FILE.read_text(encoding="utf-8"))
-    store, bm25 = build_indexes(workdir)
-    total_chunks = len(store.get_all_chunks())
-
+async def _run_once(questions: list[dict], store, bm25) -> dict:
+    """跑完整一轮题目，返回该轮的分组统计。"""
     stats: dict[str, dict] = {
         g: {"recall": [], "rr": [], "precision": [], "seconds": 0.0} for g in GROUPS
     }
@@ -132,14 +132,37 @@ async def run_eval(workdir: Path) -> str:
             if recall == 0.0:
                 misses[group].append(str(q["id"]))
 
-    answerable = len(stats["vector"]["recall"])
+    return {"stats": stats, "reject": reject, "misses": misses}
+
+
+def _mean(values: list[float]) -> float:
+    return sum(values) / len(values) if values else 0.0
+
+
+def _mean_std(values: list[float]) -> tuple[float, float]:
+    """样本均值与样本标准差；单次运行标准差记 0。"""
+    mean = _mean(values)
+    std = statistics.stdev(values) if len(values) > 1 else 0.0
+    return mean, std
+
+
+async def run_eval(workdir: Path, runs: int = 3) -> str:
+    questions = json.loads(QUESTIONS_FILE.read_text(encoding="utf-8"))
+    store, bm25 = build_indexes(workdir)
+    total_chunks = len(store.get_all_chunks())
+    runs = max(1, runs)
+
+    run_results = [await _run_once(questions, store, bm25) for _ in range(runs)]
+
+    answerable = len(run_results[0]["stats"]["vector"]["recall"])
     doc_count = len(list(CORPUS_DIR.glob("*.md")))
     lines = [
         f"# F7 检索评测结果 {date.today().isoformat()}",
         "",
         f"- 语料：`eval/corpus/` {doc_count} 份文档，共 **{total_chunks}** 个 chunk",
         f"- 题数：{len(questions)}（可答题 {answerable} / 无答案题 "
-        f"{reject['vector']['total']}）",
+        f"{run_results[0]['reject']['vector']['total']}）",
+        f"- 运行次数：**{runs}**（表格展示均值 ± 样本标准差；单次运行不显示标准差）",
         f"- 指标口径：Recall@5=top5 命中任一标注块的题占比；MRR=首个相关块 1/rank 均值；"
         f"Precision@5=top5 中相关块占比",
         f"- hybrid+rerank 组按生产终态判定：精排 top1 < "
@@ -148,20 +171,73 @@ async def run_eval(workdir: Path) -> str:
         "| 系统 | Recall@5 | MRR | Precision@5 | 无答案拒答正确率 | 平均耗时/题(秒) |",
         "|---|---|---|---|---|---|",
     ]
+
+    def cell(mean: float, std: float, digits: int = 3) -> str:
+        base = f"{mean:.{digits}f}"
+        return f"{base} ± {std:.{digits}f}" if runs > 1 else base
+
     for group in GROUPS:
-        s = stats[group]
-        n = len(s["recall"]) or 1
-        rj = reject[group]
-        reject_rate = f"{rj['correct']}/{rj['total']}" if rj["total"] else "-"
-        avg_time = s["seconds"] / len(questions)
+        run_recall = [_mean(r["stats"][group]["recall"]) for r in run_results]
+        run_rr = [_mean(r["stats"][group]["rr"]) for r in run_results]
+        run_precision = [_mean(r["stats"][group]["precision"]) for r in run_results]
+        run_seconds = [
+            r["stats"][group]["seconds"] / len(questions) for r in run_results
+        ]
+        run_reject = []
+        for r in run_results:
+            rj = r["reject"][group]
+            run_reject.append(
+                rj["correct"] / rj["total"] if rj["total"] else 0.0
+            )
+
+        recall_mean, recall_std = _mean_std(run_recall)
+        rr_mean, rr_std = _mean_std(run_rr)
+        precision_mean, precision_std = _mean_std(run_precision)
+        seconds_mean, seconds_std = _mean_std(run_seconds)
+        reject_mean, reject_std = _mean_std(run_reject)
+        rj = run_results[0]["reject"][group]
+        reject_cell = (
+            f"{reject_mean * 100:.1f}% ± {reject_std * 100:.1f}"
+            if runs > 1
+            else f"{rj['correct']}/{rj['total']}"
+        )
+        seconds_cell = (
+            f"{seconds_mean:.2f} ± {seconds_std:.2f}" if runs > 1 else f"{seconds_mean:.2f}"
+        )
         lines.append(
-            f"| {group} | {sum(s['recall']) / n:.3f} | {sum(s['rr']) / n:.3f} "
-            f"| {sum(s['precision']) / n:.3f} | {reject_rate} | {avg_time:.2f} |"
+            f"| {group} | {cell(recall_mean, recall_std)} | {cell(rr_mean, rr_std)} "
+            f"| {cell(precision_mean, precision_std)} | {reject_cell} | {seconds_cell} |"
         )
 
-    lines += ["", "## 各组未命中（Recall@5=0）的题目 id", ""]
+    lines += ["", "## 各组未命中（Recall@5=0）的题目 id（任一运行未命中即列出）", ""]
     for group in GROUPS:
-        lines.append(f"- **{group}**：{', '.join(misses[group]) if misses[group] else '无'}")
+        union: list[str] = []
+        for r in run_results:
+            for qid in r["misses"][group]:
+                if qid not in union:
+                    union.append(qid)
+        lines.append(f"- **{group}**：{', '.join(union) if union else '无'}")
+
+    if runs > 1:
+        lines += [
+            "",
+            "## 逐次运行明细",
+            "",
+            "| 运行 | vector R@5 | bm25 R@5 | hybrid R@5 | rerank R@5 | rerank MRR "
+            "| rerank 拒答 | rerank 耗时/题(s) |",
+            "|---|---|---|---|---|---|---|---|",
+        ]
+        for i, r in enumerate(run_results, start=1):
+            rj = r["reject"]["hybrid+rerank"]
+            values = [
+                _mean(r["stats"][g]["recall"]) for g in GROUPS
+            ]
+            lines.append(
+                f"| #{i} | {values[0]:.3f} | {values[1]:.3f} | {values[2]:.3f} "
+                f"| {values[3]:.3f} | {_mean(r['stats']['hybrid+rerank']['rr']):.3f} "
+                f"| {rj['correct']}/{rj['total']} "
+                f"| {r['stats']['hybrid+rerank']['seconds'] / len(questions):.2f} |"
+            )
 
     report = "\n".join(lines)
     RESULTS_DIR.mkdir(exist_ok=True)
@@ -205,7 +281,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="F7 检索评测")
     parser.add_argument("--dump", action="store_true", help="只打印 chunk 坐标供标注")
     parser.add_argument("--full", action="store_true", help="与 --dump 搭配：打印 chunk 全文")
+    parser.add_argument("--dump-file", default=None, help="与 --dump 搭配：把坐标写入指定文件（UTF-8）")
     parser.add_argument("--detail", action="store_true", help="逐题打印首个相关块排名/拒答诊断")
+    parser.add_argument("--runs", type=int, default=3, help="完整评测重复次数，默认 3")
     args = parser.parse_args()
 
     # Windows 上 Chroma 数据文件可能被进程延迟释放，TemporaryDirectory 退出时
@@ -216,11 +294,18 @@ def main() -> None:
         workdir = Path(tmp)
         store, _bm25 = build_indexes(workdir)
         if args.dump:
-            dump_chunks(store, full=args.full)
+            if args.dump_file:
+                out = Path(args.dump_file)
+                out.parent.mkdir(parents=True, exist_ok=True)
+                with out.open("w", encoding="utf-8") as f, contextlib.redirect_stdout(f):
+                    dump_chunks(store, full=args.full)
+                print(f"chunk 坐标已写入 {out}")
+            else:
+                dump_chunks(store, full=args.full)
         elif args.detail:
             asyncio.run(detail(workdir))
         else:
-            print(asyncio.run(run_eval(workdir)))
+            print(asyncio.run(run_eval(workdir, runs=args.runs)))
     finally:
         del store
         gc.collect()

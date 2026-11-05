@@ -19,7 +19,9 @@ async def query_chat(req: ChatRequest):
 
     req.doc_ids 非空时只在指定文档范围内检索（Day 13++ 文档级圈选）。
     """
-    return await chat_service.answer_question(req.query, doc_ids=req.doc_ids)
+    return await chat_service.answer_question(
+        req.query, doc_ids=req.doc_ids, model=req.model
+    )
 
 
 def _format_sse(event: stream_service.SSEEvent) -> str:
@@ -33,7 +35,7 @@ async def stream_chat(req: ChatRequest):
     """检索完成先发 meta/sources，正文逐块 delta；拒答与故障时序见设计文档 7.3"""
     async def event_generator():
         async for event in stream_service.stream_answer(
-            req.query, doc_ids=req.doc_ids
+            req.query, doc_ids=req.doc_ids, model=req.model
         ):
             yield _format_sse(event).encode("utf-8")
 

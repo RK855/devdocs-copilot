@@ -3,6 +3,9 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.config import settings
+from app.services import model_registry
+
 
 class DocumentOut(BaseModel):
     """文档列表中的单项"""
@@ -32,6 +35,17 @@ class DeleteResponse(BaseModel):
 
 # ============ 问答相关 ============
 
+class CustomModelIn(BaseModel):
+    """前端「自定义模型」表单：字段长度先由 Pydantic 兜底，URL 规则由注册表校验"""
+
+    api_format: Literal["openai"] = "openai"
+    base_url: str = Field(max_length=500)
+    model_id: str = Field(max_length=128)
+    display_name: str = Field(default="", max_length=64)
+    api_key: str = Field(max_length=2000)
+    full_url: bool = False
+
+
 class ChatRequest(BaseModel):
     """问答请求体"""
     # Day 13：2000 字符上限防超长输入（前端 textarea 同步 maxlength 软约束）
@@ -48,6 +62,20 @@ class ChatRequest(BaseModel):
         default=False,
         description="Agent 库内零证据时是否允许通用知识兜底（仅本次请求有效）",
     )
+    # 前端聊天模型下拉：只允许服务端白名单内的名字；None=用服务端默认
+    model: str | None = Field(
+        default=None, max_length=64,
+        description="本次请求使用的聊天模型，必须在服务端白名单内",
+    )
+
+    @field_validator("model")
+    @classmethod
+    def model_in_allowlist(cls, v):
+        if v is None:
+            return v
+        if not model_registry.is_supported(v):
+            raise ValueError(f"不支持的模型：{v}")
+        return v
 
     @field_validator("doc_ids")
     @classmethod
